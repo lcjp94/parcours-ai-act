@@ -2019,25 +2019,25 @@ function reportFile(d){
   return `<!doctype html>\n<html lang="${L.htmlLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><style>${RP_CSS}\nbody{margin:0;background:#f5f5f7;padding:24px 16px}</style></head><body><div id="rp-doc">${reportHTML(d)}</div></body></html>\n`;
 }
 function renderReport(){
-  const R=L.rp, d=reportData(), top=window.self===window.top;
+  const R=L.rp, d=reportData(), top=window.self===window.top, ok=!!d.passAtt;
   app.innerHTML=`<div class="stack-lg">
    <div class="stack noprint" style="max-width:72ch"><p class="eyebrow">${R.eyebrow}</p><h1>${R.h1}</h1><p class="lede">${R.lede}</p></div>
    <div class="panel stack noprint">
      <label class="stack" style="gap:6px"><b>${R.name}</b><input class="field" id="rp-name" value="${esc(S.learner||"")}" placeholder="${esc(R.namePh)}" maxlength="80" autocomplete="name"></label>
      <span class="hint">${R.nameHint}</span>
      ${d.passAtt?"":`<div class="notice">${examReady()?R.noExamReady:R.noExam}</div>`}
-     <div class="row"><button class="btn" id="rp-pdf">${R.pdf}</button>${top&&!isIOS()?`<button class="btn ghost" id="rp-print">${R.print}</button>`:""}<button class="btn ghost" id="rp-md">${R.md}</button>
+     <div class="row"><button class="btn" id="rp-pdf" ${ok?"":"disabled"} ${ok?"":`aria-describedby="rp-lock"`}>${R.pdf}</button>${top&&!isIOS()?`<button class="btn ghost" id="rp-print" ${ok?"":"disabled"}>${R.print}</button>`:""}<button class="btn ghost" id="rp-md" ${ok?"":"disabled"}>${R.md}</button>
        ${!d.passAtt&&examReady()?`<button class="btn quiet" id="rp-exam">${L.ex.start}</button>`:""}<span class="hint" id="rp-msg"></span></div>
-     <p class="hint">${R.pdfHint}</p>
+     <p class="hint" id="rp-lock">${ok?R.pdfHint:R.exportLocked}</p>
    </div>
    <div id="rp-doc">${reportHTML(d)}</div>
   </div>`;
   const nm=document.getElementById("rp-name"); let t=null;
   nm.oninput=()=>{ S.learner=nm.value; clearTimeout(t); t=setTimeout(()=>{ save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); },300); };
-  const p=document.getElementById("rp-print"); if(p) p.onclick=()=>{ S.learner=nm.value; save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); window.print(); };
-  document.getElementById("rp-pdf").onclick=()=>{ S.learner=nm.value; save(); const msg=document.getElementById("rp-msg");
+  const p=document.getElementById("rp-print"); if(p) p.onclick=()=>{ if(!reportData().passAtt) return; S.learner=nm.value; save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); window.print(); };
+  document.getElementById("rp-pdf").onclick=()=>{ if(!reportData().passAtt) return; S.learner=nm.value; save(); const msg=document.getElementById("rp-msg");
     try{ savePDF(reportData(), msg); }catch(e){ msg.textContent=R.pdfErr; } };
-  document.getElementById("rp-md").onclick=()=>{ const md=reportMarkdown(reportData()), msg=document.getElementById("rp-msg");
+  document.getElementById("rp-md").onclick=()=>{ if(!reportData().passAtt) return; const md=reportMarkdown(reportData()), msg=document.getElementById("rp-msg");
     const show=()=>{ msg.innerHTML=`<textarea readonly id="rp-mdbox" style="min-height:200px;margin-top:8px">${esc(md)}</textarea>`; const b=document.getElementById("rp-mdbox"); b.focus(); b.select(); };
     try{ navigator.clipboard.writeText(md).then(()=>msg.textContent=R.copied, show); }catch(e){ show(); } };
   const ex=document.getElementById("rp-exam"); if(ex) ex.onclick=()=>go({name:"examIntro"});
@@ -2244,7 +2244,7 @@ function reportPDF(d){
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
 function savePDF(d, msgEl){
   const R=L.rp, bytes=reportPDF(d);
-  const name=`${R.file}-${(d.name||"ai-act").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.pdf`;
+  const name=`${R.file}${d.name?"-":""}${(d.name||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.pdf`;
   const blob=new Blob([bytes],{type:"application/pdf"});
   const download=()=>{ const url=URL.createObjectURL(blob), aEl=document.createElement("a"); aEl.href=url; aEl.download=name; aEl.rel="noopener";
     document.body.appendChild(aEl); aEl.click(); setTimeout(()=>{ URL.revokeObjectURL(url); aEl.remove(); },60000); if(msgEl) msgEl.textContent=R.pdfDone; };
@@ -2346,7 +2346,7 @@ const I18N = {
   rp:{eyebrow:"Relevé de compétences", h1:"Mon relevé et mon attestation", file:"releve-ai-act",
     lede:"Ce document récapitule vos modules, votre résultat à l’examen final et l’état de chaque compétence. L’attestation de réussite s’ajoute en première page dès que l’examen est réussi.",
     name:"Nom et prénom à faire figurer", namePh:"Votre nom", nameHint:"Enregistré uniquement dans ce navigateur. Il n’est ni vérifié ni transmis.",
-    pdf:"Télécharger en PDF", print:"Imprimer", pdfDone:"PDF généré : vérifiez vos téléchargements.", pdfErr:"La génération du PDF a échoué. Utilisez « Imprimer » ou « Copier en Markdown ».", pdfHint:"Le PDF contient l’attestation (si l’examen est réussi) et le relevé complet. Sur iPhone, la feuille de partage s’ouvre : choisissez « Enregistrer dans Fichiers » ou « Imprimer ».", md:"Copier en Markdown", copied:"Copié.",
+    exportLocked:"Le téléchargement, l’impression et la copie s’activent après la réussite de l’examen final (80 %). L’aperçu ci-dessous montre votre progression actuelle.", pdf:"Télécharger en PDF", print:"Imprimer", pdfDone:"PDF généré : vérifiez vos téléchargements.", pdfErr:"La génération du PDF a échoué. Utilisez « Imprimer » ou « Copier en Markdown ».", pdfHint:"Le PDF contient l’attestation de réussite et le relevé complet. Sur iPhone, la feuille de partage s’ouvre : choisissez « Enregistrer dans Fichiers » ou « Imprimer ».", md:"Copier en Markdown", copied:"Copié.",
     iframe:"L’impression et le téléchargement sont disponibles quand le fichier est ouvert directement dans le navigateur.",
     noExam:"Attestation non disponible : validez tous les modules, puis réussissez l’examen final. Le relevé ci-dessous montre votre progression actuelle.",
     noExamReady:"Attestation non disponible : tous vos modules sont validés, il reste à réussir l’examen final (80 %).",
@@ -2453,7 +2453,7 @@ const I18N = {
   rp:{eyebrow:"Competency transcript", h1:"My transcript and statement of achievement", file:"ai-act-transcript",
     lede:"This document sums up your modules, your final exam result and the status of each competency. The statement of achievement is added as the first page once you pass the exam.",
     name:"Full name to display", namePh:"Your name", nameHint:"Stored in this browser only. It is neither verified nor sent anywhere.",
-    pdf:"Download as PDF", print:"Print", pdfDone:"PDF generated: check your downloads.", pdfErr:"PDF generation failed. Use “Print” or “Copy as Markdown”.", pdfHint:"The PDF contains the statement of achievement (if the exam is passed) and the full transcript. On iPhone, the share sheet opens: choose “Save to Files” or “Print”.", md:"Copy as Markdown", copied:"Copied.",
+    exportLocked:"Download, print and copy become available once you pass the final exam (80%). The preview below shows your current progress.", pdf:"Download as PDF", print:"Print", pdfDone:"PDF generated: check your downloads.", pdfErr:"PDF generation failed. Use “Print” or “Copy as Markdown”.", pdfHint:"The PDF contains the statement of achievement and the full transcript. On iPhone, the share sheet opens: choose “Save to Files” or “Print”.", md:"Copy as Markdown", copied:"Copied.",
     iframe:"Printing and downloading are available when the file is opened directly in the browser.",
     noExam:"Statement not available: pass every module, then pass the final exam. The transcript below shows your current progress.",
     noExamReady:"Statement not available: all your modules are passed; you still need to pass the final exam (80%).",
