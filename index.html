@@ -182,6 +182,24 @@ footer.foot .wrap{padding-block:24px 32px;display:flex;flex-direction:column;gap
 #tip .t-foot{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);padding-top:8px;font-size:.76rem;color:var(--muted)}
 #tip a{font-weight:500}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+/* Examen final */
+.ex-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.timer{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600;font-size:1.05rem;padding:6px 14px;border-radius:980px;background:var(--fill);color:var(--ink)}
+.timer.low{background:var(--bad-soft);color:var(--bad)}
+.ex-grid{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:28px;align-items:start}
+.ex-side{position:sticky;top:76px}
+@media (max-width:860px){.ex-grid{grid-template-columns:1fr}.ex-side{position:static}}
+.ex-type{font-size:.8rem;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.ex-nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:6px}
+.ex-nav button{font:inherit;font-size:.8rem;font-variant-numeric:tabular-nums;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer;position:relative;padding:0}
+.ex-nav button.ans{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.ex-nav button.cur{outline:2px solid var(--accent);outline-offset:1px}
+.ex-nav button.flag::after{content:"";position:absolute;top:3px;right:3px;width:7px;height:7px;border-radius:50%;background:var(--r-haut)}
+.ex-rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+.ex-mrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(80px,200px) 48px;gap:14px;align-items:center;font-size:.95rem}
+.ex-panel{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border:1px solid color-mix(in srgb,var(--accent) 30%,transparent)}
+.chip.part{color:var(--r-transp);background:var(--warn-soft)} .chip.ko{color:var(--bad);background:var(--bad-soft)}
+#rp-name{max-width:440px}
 </style>
 </head>
 <body>
@@ -1104,13 +1122,949 @@ const DOC_FOOT = "Produced with AI Act Pathway, created by Jean-Pierre LAI-CHEON
 return {MODULES, PLACEMENT, PROFILES, ART, RGPD, ART_URL, RGPD_URL, DELIV, BANNED, ANNEX3, TRANS, TNAME, DOC_FOOT};
 })();
 
+/* ===================== EXAMEN DE CERTIFICATION (FR) =====================
+   40 compétences (4 par module), 2 variantes de question par compétence.
+   lvl 1 : accessible au profil cadre ; lvl 2 : profil responsable uniquement.
+   t:"s" = une seule bonne réponse ; t:"m" = plusieurs bonnes réponses (tout ou rien).
+   Rédigé à partir du contenu des modules (état du droit au 21/10/2026). */
+CONTENT.fr.CONCEPTS = [
+ {id:"m1c1",lvl:1,l:"Appliquer la définition du système d’IA (critère d’inférence, art. 3(1))"},
+ {id:"m1c2",lvl:1,l:"Déterminer le champ d’application territorial et personnel (art. 2)"},
+ {id:"m1c3",lvl:1,l:"Situer un système dans l’approche par les risques et repérer les cumuls de régimes"},
+ {id:"m1c4",lvl:2,l:"Identifier les exclusions du champ (militaire, recherche, usage personnel)"},
+ {id:"m2c1",lvl:1,l:"Identifier les obligations déjà applicables (interdits et art. 4 depuis le 02/02/2025)"},
+ {id:"m2c2",lvl:1,l:"Dater la transparence (art. 50, 02/08/2026) et le délai de marquage (02/12/2026)"},
+ {id:"m2c3",lvl:1,l:"Dater le haut risque après l’Omnibus (Annexe III : 02/12/2027 ; Annexe I : 02/08/2028)"},
+ {id:"m2c4",lvl:2,l:"Appliquer le régime transitoire (art. 111) aux systèmes et modèles existants"},
+ {id:"m3c1",lvl:1,l:"Distinguer fournisseur et déployeur (art. 3(3) et 3(4))"},
+ {id:"m3c2",lvl:1,l:"Repérer la bascule de déployeur en fournisseur (art. 25)"},
+ {id:"m3c3",lvl:1,l:"Identifier importateur, distributeur et mandataire"},
+ {id:"m3c4",lvl:2,l:"Traduire la chaîne de valeur en clauses contractuelles (art. 25(2), 25(4), 99(4))"},
+ {id:"m4c1",lvl:1,l:"Reconnaître les pratiques interdites de l’art. 5"},
+ {id:"m4c2",lvl:1,l:"Appliquer l’interdiction de la reconnaissance des émotions au travail et à l’école"},
+ {id:"m4c3",lvl:1,l:"Connaître le plafond de sanction des pratiques interdites (art. 99(3))"},
+ {id:"m4c4",lvl:2,l:"Maîtriser les interdictions biométriques et les ajouts de l’Omnibus"},
+ {id:"m5c1",lvl:2,l:"Qualifier un système haut risque par l’Annexe I ou l’Annexe III (art. 6)"},
+ {id:"m5c2",lvl:2,l:"Appliquer la dérogation de l’art. 6(3) et sa limite (profilage)"},
+ {id:"m5c3",lvl:2,l:"Lister les exigences et obligations du fournisseur de système haut risque"},
+ {id:"m5c4",lvl:2,l:"Lister les obligations du déployeur de système haut risque (art. 26, 27, 86)"},
+ {id:"m6c1",lvl:1,l:"Appliquer l’obligation d’information des systèmes conversationnels (art. 50(1))"},
+ {id:"m6c2",lvl:1,l:"Traiter les hypertrucages et le marquage des contenus générés"},
+ {id:"m6c3",lvl:1,l:"Appliquer la règle des textes d’intérêt public et l’exception éditoriale (art. 50(4))"},
+ {id:"m6c4",lvl:2,l:"Connaître le délai de marquage et le plafond de sanction de l’art. 50"},
+ {id:"m7c1",lvl:2,l:"Lister les obligations de tout fournisseur de modèle GPAI (art. 53)"},
+ {id:"m7c2",lvl:2,l:"Identifier un modèle à risque systémique et ses obligations (art. 51 et 55)"},
+ {id:"m7c3",lvl:2,l:"Positionner une entreprise qui intègre un modèle GPAI dans son produit"},
+ {id:"m7c4",lvl:2,l:"Connaître le code de pratique et le régime d’amendes GPAI (art. 101)"},
+ {id:"m8c1",lvl:1,l:"Mettre en œuvre l’art. 4 réécrit (obligation de moyens et preuves)"},
+ {id:"m8c2",lvl:1,l:"Construire une gouvernance IA (inventaire, qualification, politique, achats, formation)"},
+ {id:"m8c3",lvl:1,l:"Encadrer les usages par une politique d’usage et des contrôles d’achat"},
+ {id:"m8c4",lvl:2,l:"Déterminer les plafonds de sanction, y compris PME et small mid-caps (art. 99)"},
+ {id:"m9c1",lvl:2,l:"Articuler AI Act et RGPD (cumul des régimes)"},
+ {id:"m9c2",lvl:2,l:"Articuler AIPD (RGPD art. 35) et FRIA (art. 27)"},
+ {id:"m9c3",lvl:2,l:"Encadrer la décision automatisée (RGPD art. 22, AI Act art. 14 et 86)"},
+ {id:"m9c4",lvl:2,l:"Appliquer l’art. 4a sur la détection et la correction des biais"},
+ {id:"m10c1",lvl:2,l:"Dérouler la méthode d’audit en cinq étapes"},
+ {id:"m10c2",lvl:2,l:"Analyser un agent IA de prospection (rôle, art. 50, RGPD, sécurité)"},
+ {id:"m10c3",lvl:2,l:"Définir les contrôles d’un assistant RAG et détecter un changement d’usage"},
+ {id:"m10c4",lvl:2,l:"Argumenter en entretien sur la portée et le calendrier de l’AI Act"},
+];
+
+CONTENT.fr.EXAM = [
+/* ---------- M1 ---------- */
+{id:"m1c1a",c:"m1c1",t:"s",p:"Un éditeur vend un logiciel de calcul de primes qui applique un barème entièrement écrit par des actuaires (tranches d’âge, coefficients fixes). Il n’apprend rien des données. Au regard de l’art. 3(1), ce logiciel…",
+ o:["Est un système d’IA, puisqu’il produit des décisions","N’est en principe pas un système d’IA : il applique des règles définies par des humains, sans inférence","Est un système d’IA à haut risque de l’Annexe III","Est un modèle d’IA à usage général"],a:1,
+ e:"Le critère décisif est l’inférence. Un logiciel qui exécute uniquement des règles écrites par des humains n’est en principe pas un système d’IA. En cas de doute, appuyez-vous sur les lignes directrices de la Commission sur la définition."},
+{id:"m1c1b",c:"m1c1",t:"m",p:"Quels éléments font partie de la définition du système d’IA de l’art. 3(1) ?",
+ o:["Un système fondé sur une machine","Conçu pour fonctionner avec un certain niveau d’autonomie","Qui déduit, à partir des entrées reçues, comment générer des sorties","Qui utilise obligatoirement un réseau de neurones","Qui est commercialisé sous licence payante"],a:[0,1,2],
+ e:"Machine, autonomie et inférence font partie de la définition (avec une adaptabilité possible après déploiement). La technique utilisée n’est pas imposée, et un système fourni gratuitement reste couvert."},
+{id:"m1c2a",c:"m1c2",t:"s",p:"Une société établie à Singapour, sans présence dans l’UE, fournit à une banque lyonnaise un service de scoring. Le système tourne à Singapour ; seuls les scores sont transmis et utilisés en France. L’AI Act…",
+ o:["Ne s’applique pas, car le système n’est pas hébergé dans l’UE","S’applique : il vise aussi les fournisseurs hors UE dont les sorties du système sont utilisées dans l’UE","S’applique à la banque, mais jamais au fournisseur","Ne s’appliquera qu’après la désignation d’un mandataire"],a:1,
+ e:"L’art. 2 a une portée extraterritoriale : il couvre les fournisseurs et déployeurs établis hors UE lorsque les sorties du système sont utilisées dans l’Union."},
+{id:"m1c2b",c:"m1c2",t:"s",p:"Lequel de ces acteurs n’entre PAS dans le champ de l’AI Act ?",
+ o:["Un fournisseur américain qui met un système sur le marché de l’UE","Une entreprise établie en Allemagne qui utilise un outil d’IA pour ses équipes","Une personne qui utilise un assistant IA pour organiser ses vacances personnelles","Un importateur établi en Belgique"],a:2,
+ e:"L’usage purement personnel et non professionnel par une personne physique est exclu. Les autres acteurs sont des opérateurs visés par l’art. 2."},
+{id:"m1c3a",c:"m1c3",t:"m",p:"Quelles affirmations sur l’approche par les risques sont exactes ?",
+ o:["Les pratiques interdites relèvent de l’art. 5","Les obligations de transparence (chatbots, hypertrucages) relèvent de l’art. 50","Un système à risque minimal n’a pas d’obligation spécifique hors art. 4 ; des codes de conduite volontaires sont possibles","Les modèles d’IA à usage général sont classés haut risque par défaut","Le haut risque dépend du chiffre d’affaires du fournisseur"],a:[0,1,2],
+ e:"Les quatre niveaux sont : interdit (art. 5), haut risque (art. 6 à 49), transparence (art. 50), minimal. Les modèles GPAI ont un régime distinct (chapitre V), et la classification dépend de l’usage, pas de la taille de l’entreprise."},
+{id:"m1c3b",c:"m1c3",t:"s",p:"Un chatbot mène des entretiens de présélection de candidats et note leurs réponses. Qualification la plus juste :",
+ o:["Uniquement l’art. 50, puisque c’est un chatbot","Haut risque (Annexe III, emploi) et, en plus, obligations de transparence de l’art. 50","Risque minimal","Pratique interdite"],a:1,
+ e:"Les régimes peuvent se cumuler : l’usage (sélection de candidats) rend le système haut risque, et l’interaction avec des personnes déclenche l’art. 50."},
+{id:"m1c4a",c:"m1c4",t:"s",p:"Un laboratoire universitaire développe un modèle de détection de tumeurs, uniquement pour ses travaux de recherche, sans le mettre sur le marché. Pendant cette phase…",
+ o:["Il relève de l’exclusion de la recherche et du développement scientifiques (art. 2), à interpréter strictement","Il est haut risque Annexe I dès le premier prototype","Il doit être marqué CE avant tout test","Il est interdit"],a:0,
+ e:"Les systèmes développés et mis en service à la seule fin de recherche scientifique sont exclus. Cette exclusion cesse si le système est mis sur le marché ou utilisé hors de ce cadre ; documentez le motif."},
+{id:"m1c4b",c:"m1c4",t:"m",p:"Quels usages sont exclus du champ de l’AI Act ?",
+ o:["Un usage exclusivement militaire, de défense ou de sécurité nationale","Un usage purement personnel et non professionnel par une personne physique","Un usage interne par une entreprise pour ses salariés","Un usage par une administration publique","Un système mis à disposition gratuitement"],a:[0,1],
+ e:"Un usage interne reste un usage professionnel, l’administration est un déployeur comme un autre, et la définition du fournisseur couvre la mise à disposition « à titre onéreux ou gratuit »."},
+/* ---------- M2 ---------- */
+{id:"m2c1a",c:"m2c1",t:"m",p:"En octobre 2026, quelles obligations s’appliquent déjà à une entreprise qui déploie des outils d’IA ?",
+ o:["Les interdictions de l’art. 5","Les mesures de maîtrise de l’IA de l’art. 4","La signalisation des hypertrucages qu’elle diffuse (art. 50)","Les obligations de déployeur haut risque Annexe III (art. 26)","Les obligations haut risque Annexe I"],a:[0,1,2],
+ e:"Interdits et art. 4 depuis le 02/02/2025, art. 50 depuis le 02/08/2026. Le haut risque est reporté au 02/12/2027 (Annexe III) et au 02/08/2028 (Annexe I)."},
+{id:"m2c1b",c:"m2c1",t:"s",p:"Depuis quand l’interdiction de la reconnaissance des émotions des salariés s’applique-t-elle ?",
+ o:["1er août 2024","2 février 2025","2 août 2026","2 décembre 2026"],a:1,
+ e:"Toutes les interdictions d’origine de l’art. 5 s’appliquent depuis le 2 février 2025. Le 2 décembre 2026 concerne seulement les deux interdictions ajoutées par l’Omnibus."},
+{id:"m2c2a",c:"m2c2",t:"s",p:"Un éditeur commercialise depuis 2025 un générateur d’images. Quelle est sa situation au titre de l’art. 50 au 22 octobre 2026 ?",
+ o:["L’art. 50 s’applique depuis le 2 août 2026, et il a jusqu’au 2 décembre 2026 pour le marquage lisible par machine des contenus générés","Rien ne s’applique avant le 2 décembre 2027","Il est exempté car son système est antérieur à 2026","Il doit cesser de commercialiser son outil"],a:0,
+ e:"L’Omnibus n’a pas reporté l’art. 50. Il a seulement accordé, pour les systèmes génératifs mis sur le marché avant le 2 août 2026, un délai de marquage jusqu’au 2 décembre 2026."},
+{id:"m2c2b",c:"m2c2",t:"s",p:"Un collègue affirme : « avec l’Omnibus, les obligations sur les chatbots sont reportées à fin 2027 ». C’est…",
+ o:["Exact","Faux : seul le haut risque a été reporté ; l’art. 50 s’applique depuis le 2 août 2026","Exact pour les PME seulement","Exact, sauf pour les hypertrucages"],a:1,
+ e:"Le report de l’Omnibus vise les obligations haut risque. La transparence des chatbots (art. 50(1)) s’applique depuis le 2 août 2026."},
+{id:"m2c3a",c:"m2c3",t:"s",p:"La DSI prépare sa feuille de route : un outil de tri de CV (Annexe III) et un logiciel d’IA intégré à une machine industrielle soumise à évaluation par un tiers (Annexe I). Quelles dates d’application des obligations haut risque retenir ?",
+ o:["02/12/2027 pour le tri de CV ; 02/08/2028 pour la machine","02/08/2026 pour les deux","02/08/2028 pour le tri de CV ; 02/12/2027 pour la machine","02/08/2027 pour les deux"],a:0,
+ e:"Après l’Omnibus : Annexe III au 2 décembre 2027 (au lieu du 2 août 2026), Annexe I au 2 août 2028 (au lieu du 2 août 2027)."},
+{id:"m2c3b",c:"m2c3",t:"s",p:"Pourquoi le haut risque a-t-il été reporté, et qu’en déduire pour un projet ?",
+ o:["Notamment à cause du retard des normes harmonisées ; le report donne du temps pour se préparer, pas une dispense","Le haut risque a été jugé inutile et sera supprimé","Les PME en sont désormais exemptées","Il faut attendre une directive de transposition"],a:0,
+ e:"Le retard des normes harmonisées a motivé le report. Les obligations restent prévues aux nouvelles dates : il faut continuer à préparer la conformité."},
+{id:"m2c4a",c:"m2c4",t:"s",p:"Un outil de tri de CV utilisé par une entreprise privée a été mis en service en 2026 et n’est plus modifié ensuite. Selon l’art. 111(2) modifié par l’Omnibus…",
+ o:["Il devra être mis en conformité au 2 décembre 2027 dans tous les cas","Les exigences haut risque ne s’y appliquent que s’il subit ensuite des modifications importantes de sa conception","Il est définitivement exempté, même en cas de refonte complète","Il doit être retiré du marché"],a:1,
+ e:"Les systèmes mis sur le marché ou en service avant la date d’application du chapitre III ne sont visés qu’en cas de modifications importantes de leur conception. Exception : ceux destinés aux autorités publiques doivent être conformes au plus tard le 2 août 2030."},
+{id:"m2c4b",c:"m2c4",t:"s",p:"Un fournisseur a mis son modèle d’IA à usage général sur le marché en mars 2025. Il doit être conforme au chapitre V au plus tard le…",
+ o:["2 août 2025","2 août 2026","2 août 2027","2 décembre 2027"],a:2,
+ e:"Art. 111(3) : les modèles GPAI mis sur le marché avant le 2 août 2025 ont jusqu’au 2 août 2027. Les modèles mis sur le marché après cette date sont soumis au chapitre V dès leur mise sur le marché."},
+/* ---------- M3 ---------- */
+{id:"m3c1a",c:"m3c1",t:"s",p:"Une mutuelle fait développer un outil d’IA par une ESN, puis le met en service pour son propre usage, sous son nom. Qui est le fournisseur ?",
+ o:["L’ESN seule, puisqu’elle a écrit le code","La mutuelle : elle a fait développer le système et le met en service sous son propre nom","Personne, car l’outil n’est pas vendu","L’hébergeur cloud"],a:1,
+ e:"L’art. 3(3) vise celui qui développe ou fait développer un système et le met sur le marché ou en service sous son nom, à titre onéreux ou gratuit. La mutuelle est aussi déployeur de l’outil."},
+{id:"m3c1b",c:"m3c1",t:"m",p:"Une PME s’abonne à un outil SaaS de rédaction assistée par IA pour ses commerciaux. Quelles affirmations sont exactes ?",
+ o:["Elle est déployeur","Elle doit prendre des mesures de maîtrise de l’IA (art. 4)","Elle devient fournisseur du modèle sous-jacent","Elle est importateur si l’éditeur est américain","Elle est hors champ, car elle n’a rien développé"],a:[0,1],
+ e:"Utiliser un système sous son autorité à titre professionnel fait d’elle un déployeur, soumis à l’art. 4. L’importateur est celui qui met sur le marché de l’UE un système d’une entité hors UE, pas celui qui l’utilise."},
+{id:"m3c2a",c:"m3c2",t:"m",p:"Lesquels de ces actes font basculer un déployeur en fournisseur d’un système haut risque (art. 25) ?",
+ o:["Apposer son nom ou sa marque sur un système haut risque déjà sur le marché","Modifier substantiellement un système haut risque qui reste haut risque","Changer la finalité d’un système non haut risque de sorte qu’il le devienne","Utiliser le système conformément à la notice","Former ses salariés à l’outil"],a:[0,1,2],
+ e:"Ce sont les trois cas de l’art. 25. Utiliser le système selon la notice et former les utilisateurs sont précisément ce qu’on attend d’un déployeur."},
+{id:"m3c2b",c:"m3c2",t:"s",p:"Une école utilise un assistant d’écriture généraliste et décide de s’en servir pour noter automatiquement les copies d’examen. Analyse la plus juste :",
+ o:["Aucun impact, l’outil reste généraliste","Ce changement de finalité vers un usage de l’Annexe III (évaluation des apprentissages) peut faire de l’école le fournisseur d’un système haut risque","L’école devient distributeur","Seul l’éditeur de l’assistant est responsable"],a:1,
+ e:"Détourner la finalité prévue vers un usage Annexe III (point 3, éducation) fait basculer la charge du fournisseur sur l’utilisateur (art. 25)."},
+{id:"m3c3a",c:"m3c3",t:"s",p:"Une société établie à Paris met sur le marché de l’UE un système d’IA portant le nom et la marque d’un éditeur établi en Corée. Elle est…",
+ o:["Importateur","Distributeur","Mandataire","Déployeur"],a:0,
+ e:"L’importateur est établi dans l’UE et met sur le marché un système portant le nom d’une entité établie hors UE."},
+{id:"m3c3b",c:"m3c3",t:"s",p:"Un fournisseur établi au Canada désigne une entité établie dans l’UE pour le représenter auprès des autorités. Cette entité est…",
+ o:["Importateur","Distributeur","Mandataire","Fournisseur"],a:2,
+ e:"Le mandataire représente dans l’UE un fournisseur établi hors UE. Le distributeur, lui, met un système à disposition sans être fournisseur ni importateur."},
+{id:"m3c4a",c:"m3c4",t:"s",p:"Depuis l’Omnibus, le non-respect des obligations de l’art. 25(2) et (4) (coopération entre fournisseurs, accords écrits avec les tiers fournissant des composants) relève…",
+ o:["Du plafond de l’art. 99(4) : 15 M€ ou 3 % du CA mondial","Du plafond de l’art. 99(3) : 35 M€ ou 7 %","Du plafond de l’art. 99(5) : 7,5 M€ ou 1 %","D’aucune sanction"],a:0,
+ e:"L’Omnibus a ajouté à l’art. 99(4) un point visant les obligations de l’art. 25(2) et (4)."},
+{id:"m3c4b",c:"m3c4",t:"m",p:"Quelles clauses prioriser dans le contrat avec le fournisseur d’un système haut risque que vous déployez ?",
+ o:["Remise de la documentation et de la notice d’utilisation","Assistance à la conformité et accès techniques nécessaires","Notification des modifications du système","Transfert au déployeur de toutes les obligations légales du fournisseur","Désactivation de la journalisation pour réduire les coûts"],a:[0,1,2],
+ e:"Un contrat ne change pas les rôles définis par le règlement : il organise l’information et la coopération. La journalisation est une exigence (art. 12 et 26(6))."},
+/* ---------- M4 ---------- */
+{id:"m4c1a",c:"m4c1",t:"m",p:"Lesquelles de ces pratiques sont interdites par l’art. 5 ?",
+ o:["Une notation sociale entraînant un traitement défavorable injustifié ou disproportionné","L’évaluation du risque qu’une personne commette une infraction, fondée uniquement sur son profilage","Une catégorisation biométrique déduisant l’orientation sexuelle","Un moteur de recommandation de produits sur un site marchand","Un outil de tri de CV"],a:[0,1,2],
+ e:"Les trois premières figurent à l’art. 5. Le tri de CV est haut risque (Annexe III), pas interdit ; la recommandation de produits relève en général du risque minimal."},
+{id:"m4c1b",c:"m4c1",t:"s",p:"Une application de jeu destinée aux enfants utilise des techniques conçues pour exploiter leur jeune âge et les pousser à des achats, en leur causant un préjudice important. C’est…",
+ o:["Une pratique interdite (exploitation des vulnérabilités)","Un système haut risque","Une simple obligation de transparence","Du risque minimal"],a:0,
+ e:"L’art. 5 interdit l’exploitation des vulnérabilités liées à l’âge, au handicap ou à la situation sociale ou économique, lorsqu’elle altère substantiellement le comportement et cause un préjudice important."},
+{id:"m4c2a",c:"m4c2",t:"s",p:"Une université veut analyser par webcam les émotions des étudiants pendant les cours en ligne pour mesurer leur attention. C’est…",
+ o:["Autorisé avec le consentement des étudiants","Interdit : reconnaissance des émotions dans un établissement d’enseignement, hors raisons médicales ou de sécurité","Haut risque Annexe III, autorisé sous conditions","Soumis seulement à l’information de l’art. 50"],a:1,
+ e:"L’interdiction ne prévoit d’exception que pour des raisons médicales ou de sécurité. Le texte ne prévoit pas d’exception fondée sur le consentement."},
+{id:"m4c2b",c:"m4c2",t:"s",p:"L’éditeur de votre logiciel de centre d’appels propose une option « analytics » qui évalue l’humeur des conseillers à partir de leur voix. Que faire ?",
+ o:["L’activer après avoir informé les salariés (art. 50)","Refuser ou désactiver la fonctionnalité : c’est une pratique interdite sur le lieu de travail","L’activer après une analyse d’impact (FRIA)","L’activer si les enregistrements sont anonymisés"],a:1,
+ e:"La reconnaissance des émotions des salariés est interdite depuis le 2 février 2025, sauf raisons médicales ou de sécurité. Vérifiez systématiquement les options « analytics » des outils achetés."},
+{id:"m4c3a",c:"m4c3",t:"s",p:"Une grande entreprise réalisant 2 Md€ de chiffre d’affaires mondial annuel déploie une pratique interdite. Plafond théorique de l’amende ?",
+ o:["35 M€","60 M€","140 M€","20 M€"],a:2,
+ e:"Art. 99(3) : 35 M€ ou 7 % du CA mondial, le montant le plus élevé étant retenu. 7 % de 2 Md€ = 140 M€, supérieur à 35 M€."},
+{id:"m4c3b",c:"m4c3",t:"s",p:"Pour une grande entreprise, comment s’applique le plafond « 35 M€ ou 7 % du CA mondial » ?",
+ o:["On retient le plus élevé des deux montants","On retient le plus faible des deux","On fait la moyenne des deux","C’est toujours 35 M€"],a:0,
+ e:"Le montant le plus élevé est retenu, sauf pour les PME et start-up, pour lesquelles c’est le plus faible."},
+{id:"m4c4a",c:"m4c4",t:"s",p:"À partir de quelle date est interdit un système d’IA conçu pour générer des images intimes non consenties de personnes réelles (« nudification ») ?",
+ o:["2 février 2025","27 juillet 2026","2 août 2026","2 décembre 2026"],a:3,
+ e:"C’est l’un des deux ajouts de l’Omnibus à l’art. 5, avec les contenus pédocriminels, applicables à partir du 2 décembre 2026."},
+{id:"m4c4b",c:"m4c4",t:"m",p:"Quelles affirmations sur les interdictions sont exactes ?",
+ o:["Constituer une base de reconnaissance faciale par moissonnage non ciblé d’images sur internet est interdit","L’identification biométrique à distance en temps réel dans l’espace public à des fins répressives est interdite, sauf exceptions strictes","Les interdictions ne visent que les fournisseurs, pas les déployeurs","Une pratique interdite devient licite si une analyse d’impact est réalisée"],a:[0,1],
+ e:"Les interdictions s’appliquent à tous les opérateurs, y compris les déployeurs. Aucune analyse d’impact ne permet de lever une interdiction."},
+/* ---------- M5 ---------- */
+{id:"m5c1a",c:"m5c1",t:"m",p:"Lesquels de ces systèmes relèvent de l’Annexe III ?",
+ o:["Un scoring de crédit de particuliers","La surveillance des examens dans un établissement d’enseignement","Le tri des appels d’urgence","Un filtre anti-spam de messagerie","Un moteur de recommandation de films"],a:[0,1,2],
+ e:"Crédit et tri des appels d’urgence relèvent des services essentiels (point 5), la surveillance d’examens de l’éducation (point 3). Les deux derniers ne figurent pas à l’Annexe III."},
+{id:"m5c1b",c:"m5c1",t:"s",p:"Un logiciel d’IA de diagnostic, composant d’un dispositif médical soumis à évaluation de conformité par un tiers, est haut risque par quelle voie ?",
+ o:["Art. 6(1) et Annexe I, avec application au 2 août 2028","Art. 6(2) et Annexe III, avec application au 2 décembre 2027","Art. 50 uniquement","Art. 5"],a:0,
+ e:"Les produits et composants de sécurité couverts par la législation d’harmonisation de l’Annexe I et soumis à un tiers relèvent de l’art. 6(1)."},
+{id:"m5c2a",c:"m5c2",t:"s",p:"Un outil d’IA (domaine emploi) se contente de reformater les CV reçus dans un modèle standard, sans les noter, les classer ni profiler les candidats. Le fournisseur peut…",
+ o:["Envisager la dérogation de l’art. 6(3) (tâche procédurale étroite), en documentant son analyse et en enregistrant le système","Ignorer l’AI Act, l’emploi n’étant pas concerné","Invoquer la même dérogation pour un outil qui classe les candidats par profilage","Demander une autorisation préalable à la Commission"],a:0,
+ e:"La dérogation couvre notamment les tâches procédurales étroites. Le fournisseur documente son évaluation avant la mise sur le marché ; l’obligation d’enregistrement a été maintenue par l’Omnibus."},
+{id:"m5c2b",c:"m5c2",t:"s",p:"Un système de l’Annexe III établit un profil de personnalité des candidats pour préparer le travail du recruteur. Peut-il bénéficier de la dérogation de l’art. 6(3) ?",
+ o:["Oui, puisqu’il s’agit d’une tâche préparatoire","Non : un système qui profile des personnes physiques est toujours considéré comme haut risque","Oui, si le recruteur valide la décision finale","Oui, si le fournisseur est une PME"],a:1,
+ e:"Le profilage de personnes physiques exclut la dérogation, quel que soit le caractère préparatoire de la tâche."},
+{id:"m5c3a",c:"m5c3",t:"m",p:"Lesquelles sont des obligations du fournisseur d’un système haut risque ?",
+ o:["Un système de gestion des risques sur tout le cycle de vie (art. 9)","Un système de gestion de la qualité (art. 17)","L’évaluation de conformité, la déclaration UE de conformité et le marquage CE","Réaliser la FRIA à la place du déployeur","Recueillir le consentement de chaque personne concernée"],a:[0,1,2],
+ e:"La FRIA (art. 27) incombe à certains déployeurs. Le consentement n’est pas une exigence de l’AI Act (la base légale relève du RGPD)."},
+{id:"m5c3b",c:"m5c3",t:"s",p:"Quelle exigence vise à ce qu’une personne puisse comprendre les limites du système, ne pas utiliser sa sortie, intervenir ou l’arrêter ?",
+ o:["Le contrôle humain (art. 14)","La journalisation (art. 12)","La gouvernance des données (art. 10)","L’exactitude et la robustesse (art. 15)"],a:0,
+ e:"L’art. 14 impose une conception permettant une supervision humaine effective, y compris contre le biais d’automatisation."},
+{id:"m5c4a",c:"m5c4",t:"m",p:"Une entreprise déploie un outil haut risque d’aide aux décisions de promotion interne. Quelles obligations lui incombent ?",
+ o:["Confier le contrôle humain à des personnes compétentes, formées et disposant de l’autorité nécessaire","Conserver les journaux sous son contrôle au moins six mois","Informer les représentants du personnel et les salariés concernés avant la mise en service","Réaliser l’évaluation de conformité et apposer le marquage CE","Rédiger la documentation technique de l’Annexe IV"],a:[0,1,2],
+ e:"Art. 26 : contrôle humain, journaux (26(6)), information des travailleurs (26(7)). Conformité, marquage CE et documentation technique sont des obligations du fournisseur."},
+{id:"m5c4b",c:"m5c4",t:"s",p:"Lequel de ces déployeurs doit réaliser une analyse d’impact sur les droits fondamentaux (art. 27) ?",
+ o:["Une banque utilisant un système d’évaluation de la solvabilité de particuliers","Une entreprise industrielle utilisant un outil de tri de CV","Un gestionnaire de réseau électrique utilisant un système de gestion du réseau","Une PME utilisant un chatbot de support"],a:0,
+ e:"L’art. 27 vise les organismes publics, les entités privées fournissant un service public et les déployeurs de systèmes de crédit (Annexe III 5(b)) ou d’assurance vie et santé (5(c)). Les infrastructures critiques (point 2) sont exclues."},
+/* ---------- M6 ---------- */
+{id:"m6c1a",c:"m6c1",t:"s",p:"Qui porte l’obligation de l’art. 50(1) de faire savoir aux personnes qu’elles interagissent avec une IA ?",
+ o:["Le fournisseur, qui conçoit le système en ce sens, sauf si c’est évident","Le déployeur uniquement","L’utilisateur final","L’autorité nationale"],a:0,
+ e:"L’art. 50(1) vise les fournisseurs de systèmes destinés à interagir avec des personnes. En pratique, le déployeur vérifie que l’outil acheté le permet et que la mention est visible."},
+{id:"m6c1b",c:"m6c1",t:"s",p:"Un agent vocal IA appelle des patients pour fixer des rendez-vous. Laquelle de ces affirmations est exacte ?",
+ o:["Les personnes doivent savoir qu’elles échangent avec une IA, sauf si c’est évident d’après le contexte","Ce système est interdit","Il est haut risque par nature","Aucune obligation, car l’échange est vocal"],a:0,
+ e:"L’obligation d’information couvre toute interaction, écrite ou vocale. La prise de rendez-vous ne relève pas en soi de l’Annexe III."},
+{id:"m6c2a",c:"m6c2",t:"s",p:"Votre service communication diffuse une vidéo dans laquelle le PDG, recréé par IA, prononce un discours qu’il n’a jamais filmé. Obligation ?",
+ o:["Aucune, puisque c’est le PDG lui-même","Votre entreprise, en tant que déployeur, indique que le contenu a été généré ou manipulé","Seul le fournisseur de l’outil doit agir","Obtenir un marquage CE pour la vidéo"],a:1,
+ e:"L’obligation de divulgation des hypertrucages pèse sur le déployeur (art. 50(4)). L’accord de la personne représentée ne la supprime pas."},
+{id:"m6c2b",c:"m6c2",t:"m",p:"Quelles affirmations sur les hypertrucages et les contenus générés sont exactes ?",
+ o:["La divulgation d’un hypertrucage incombe au déployeur","Des aménagements existent pour les œuvres manifestement artistiques ou satiriques","Le marquage lisible par machine des contenus générés incombe au fournisseur du système génératif","Les hypertrucages sont interdits par l’art. 5","Ces obligations ne s’appliqueront qu’en 2027"],a:[0,1,2],
+ e:"Les hypertrucages ne sont pas interdits en tant que tels : ils doivent être signalés. L’art. 50 s’applique depuis le 2 août 2026."},
+{id:"m6c3a",c:"m6c3",t:"s",p:"Un média publie un article d’actualité rédigé par IA, relu et validé par un journaliste qui en assume la responsabilité éditoriale. Une mention IA est-elle obligatoire au titre de l’art. 50(4) ?",
+ o:["Oui, toujours","Non : la relecture humaine sous responsabilité éditoriale fait exception ; conservez la trace de cette relecture","Oui, sauf si le texte fait moins de 500 mots","Non, car les médias sont exclus de l’AI Act"],a:1,
+ e:"L’exception repose sur la relecture humaine et la responsabilité éditoriale. Il faut pouvoir la prouver."},
+{id:"m6c3b",c:"m6c3",t:"s",p:"Pour informer le public sur un sujet d’intérêt public, un service marketing publie sur son blog un texte généré par IA, sans aucune relecture. Il doit…",
+ o:["Ne rien faire","Indiquer que le texte a été généré par IA","Réaliser une FRIA","Obtenir l’accord de l’autorité"],a:1,
+ e:"Sans relecture humaine ni responsabilité éditoriale, le déployeur signale l’origine IA d’un texte publié pour informer le public sur des sujets d’intérêt public."},
+{id:"m6c4a",c:"m6c4",t:"s",p:"Plafond d’amende pour un manquement aux obligations de l’art. 50 ?",
+ o:["15 M€ ou 3 % du CA mondial","35 M€ ou 7 %","7,5 M€ ou 1 %","Aucune sanction prévue"],a:0,
+ e:"Les obligations de transparence relèvent de l’art. 99(4)."},
+{id:"m6c4b",c:"m6c4",t:"s",p:"Le délai jusqu’au 2 décembre 2026 prévu par l’Omnibus concerne…",
+ o:["Toutes les obligations de l’art. 50","Uniquement le marquage lisible par machine (art. 50(2)) des systèmes génératifs mis sur le marché avant le 2 août 2026","L’information des personnes qui interagissent avec un chatbot","La signalisation des hypertrucages"],a:1,
+ e:"Ce délai est strictement limité au marquage technique des systèmes génératifs déjà sur le marché (art. 111(4))."},
+/* ---------- M7 ---------- */
+{id:"m7c1a",c:"m7c1",t:"m",p:"Quelles sont les obligations de tout fournisseur de modèle d’IA à usage général (art. 53) ?",
+ o:["Établir et tenir à jour la documentation technique du modèle","Informer les fournisseurs en aval qui intègrent le modèle","Mettre en place une politique de respect du droit d’auteur, y compris des réserves de droits","Publier un résumé suffisamment détaillé du contenu d’entraînement","Apposer un marquage CE sur le modèle","Réaliser une FRIA"],a:[0,1,2,3],
+ e:"Ce sont les quatre obligations de base de l’art. 53. Marquage CE et FRIA relèvent du régime des systèmes haut risque."},
+{id:"m7c1b",c:"m7c1",t:"s",p:"Un modèle diffusé sous licence libre et ouverte, poids publiés, sans risque systémique…",
+ o:["Est totalement exclu du chapitre V","Est dispensé de certaines obligations de documentation, mais reste soumis à la politique de droit d’auteur et au résumé du contenu d’entraînement","Est présumé à risque systémique","Doit être retiré du marché"],a:1,
+ e:"L’art. 53(2) écarte les obligations de documentation (points a et b) pour ces modèles, pas les autres. L’allègement ne joue pas en cas de risque systémique."},
+{id:"m7c2a",c:"m7c2",t:"s",p:"Un modèle a été entraîné avec 3 × 10^25 FLOP de calcul cumulé. Conséquence ?",
+ o:["Il est interdit","Il est présumé à risque systémique : obligations supplémentaires de l’art. 55","Il devient un système haut risque de l’Annexe III","Rien de plus que l’art. 53"],a:1,
+ e:"Au-delà de 10^25 FLOP, le modèle est présumé à risque systémique (art. 51). La Commission peut ajuster ce seuil."},
+{id:"m7c2b",c:"m7c2",t:"m",p:"Quelles obligations s’ajoutent pour un modèle à risque systémique (art. 55) ?",
+ o:["Évaluer le modèle, y compris par des tests adverses","Évaluer et atténuer les risques systémiques","Suivre et signaler les incidents graves","Enregistrer chaque utilisateur final","Apposer un marquage CE"],a:[0,1,2],
+ e:"L’art. 55 ajoute aussi un niveau adéquat de cybersécurité. L’enregistrement des utilisateurs et le marquage CE n’en font pas partie."},
+{id:"m7c3a",c:"m7c3",t:"s",p:"Une entreprise construit, sur l’API d’un modèle GPAI, un assistant qu’elle commercialise sous sa marque auprès de cabinets RH pour présélectionner des candidats. Elle est…",
+ o:["Fournisseur du modèle GPAI","Fournisseur d’un système d’IA haut risque (Annexe III, emploi), mais pas du modèle","Simple déployeur","Hors champ, car le modèle vient d’un tiers"],a:1,
+ e:"Elle met un système sur le marché sous son nom : elle en est fournisseur, et l’usage visé est de l’Annexe III. Les obligations du chapitre V restent au fournisseur du modèle."},
+{id:"m7c3b",c:"m7c3",t:"m",p:"Que doit vérifier une entreprise auprès du fournisseur du modèle qu’elle intègre ?",
+ o:["La documentation remise aux intégrateurs","Sa politique de respect du droit d’auteur","Son adhésion au code de pratique GPAI","Les conditions d’utilisation de vos prompts et données pour l’entraînement","Le marquage CE du modèle","La FRIA du modèle"],a:[0,1,2,3],
+ e:"Ces vérifications sécurisent votre propre conformité de fournisseur ou de déployeur. Marquage CE et FRIA ne s’appliquent pas à un modèle GPAI."},
+{id:"m7c4a",c:"m7c4",t:"s",p:"Le code de pratique GPAI publié en juillet 2025…",
+ o:["Est un outil volontaire qui permet aux fournisseurs de modèles de démontrer leur conformité","Est obligatoire pour toute entreprise utilisatrice","Remplace le chapitre V","Est une norme harmonisée donnant le marquage CE"],a:0,
+ e:"Le code de pratique est un moyen de démontrer la conformité aux obligations du chapitre V ; il ne remplace pas le règlement."},
+{id:"m7c4b",c:"m7c4",t:"s",p:"Depuis le 2 août 2026, qui peut infliger des amendes aux fournisseurs de modèles GPAI, et jusqu’à quel plafond ?",
+ o:["La Commission, jusqu’à 15 M€ ou 3 % du CA mondial (art. 101)","L’autorité de protection des données, jusqu’à 4 %","La Commission, jusqu’à 35 M€ ou 7 %","Chaque État membre, jusqu’à 7,5 M€ ou 1 %"],a:0,
+ e:"L’art. 101 confie ce pouvoir à la Commission (Bureau de l’IA)."},
+/* ---------- M8 ---------- */
+{id:"m8c1a",c:"m8c1",t:"s",p:"Un auditeur demande comment l’entreprise respecte l’art. 4. Meilleure réponse ?",
+ o:["Présenter les mesures prises (formations différenciées, supports, présences, évaluations), adaptées aux connaissances des personnes et au contexte d’usage","Montrer un certificat individuel garantissant le niveau de chaque salarié","Expliquer que l’art. 4 a été supprimé par l’Omnibus","Expliquer qu’il ne vise que les fournisseurs"],a:0,
+ e:"Depuis l’Omnibus, l’art. 4 est une obligation de moyens : il faut pouvoir montrer ce qui a été fait, sans garantir un niveau individuel."},
+{id:"m8c1b",c:"m8c1",t:"m",p:"Quelles affirmations sur l’art. 4 réécrit sont exactes ?",
+ o:["Il vise les fournisseurs et les déployeurs","Il couvre le personnel et les personnes qui utilisent les systèmes pour leur compte","Il n’impose de garantir aucun niveau précis pour une personne donnée","Il a un plafond d’amende spécifique à l’art. 99","Il ne s’applique qu’à partir de 2027"],a:[0,1,2],
+ e:"L’art. 99 ne prévoit pas d’amende spécifique pour l’art. 4, mais un défaut de formation peut peser dans l’appréciation d’autres manquements. L’art. 4 est applicable depuis le 2 février 2025, dans sa rédaction actuelle depuis le 27 juillet 2026."},
+{id:"m8c2a",c:"m8c2",t:"s",p:"Quelle séquence de gouvernance IA est la plus cohérente ?",
+ o:["Inventaire, qualification, politique d’usage, achats, formation","Formation, achats, inventaire, qualification, politique d’usage","Qualification, achats, formation, inventaire, politique d’usage","Politique d’usage, formation, achats, qualification, inventaire"],a:0,
+ e:"Sans inventaire, impossible de qualifier rôles et risques ; la qualification nourrit ensuite la politique, les achats et la formation."},
+{id:"m8c2b",c:"m8c2",t:"m",p:"Quelles informations l’inventaire des systèmes d’IA doit-il décrire ?",
+ o:["La finalité","Les données utilisées","Le fournisseur","Les utilisateurs et les décisions influencées","Le nombre de lignes de code"],a:[0,1,2,3],
+ e:"Ces informations servent à qualifier le rôle et le niveau de risque de chaque système."},
+{id:"m8c3a",c:"m8c3",t:"s",p:"Un commercial utilise un chatbot grand public non validé pour résumer des contrats clients confidentiels. Réponse de gouvernance la plus adaptée ?",
+ o:["Une politique d’usage (outils autorisés, données interdites dans les prompts), une formation et une alternative validée","Un marquage CE","Une FRIA","Un mandataire"],a:0,
+ e:"Ce risque très courant se traite par la politique d’usage et la formation, avec un outil autorisé pour éviter le contournement."},
+{id:"m8c3b",c:"m8c3",t:"s",p:"Quel contrôle relève de la brique « Achats » de la gouvernance IA ?",
+ o:["Un questionnaire fournisseur, des clauses contractuelles et une revue avant mise en service","La formation des salariés","L’inventaire","La mention IA sur le site web"],a:0,
+ e:"Les achats sont le point de contrôle idéal : vérifier les fonctionnalités (par exemple l’absence de reconnaissance des émotions) avant que l’outil n’entre dans l’entreprise."},
+{id:"m8c4a",c:"m8c4",t:"s",p:"Une « small mid-cap » (petite entreprise de taille intermédiaire) déploie une pratique interdite. Quelle règle de plafond s’applique depuis l’Omnibus ?",
+ o:["Le plus élevé des deux montants : l’art. 99(6a) ne vise que les paragraphes 4 et 5","Le plus faible des deux montants","Aucune amende n’est possible","Un montant fixe de 1 % du CA"],a:0,
+ e:"L’art. 99(6a) étend la règle du « plus faible » aux small mid-caps, mais pas pour les pratiques interdites (paragraphe 3)."},
+{id:"m8c4b",c:"m8c4",t:"s",p:"Fournir des informations inexactes, incomplètes ou trompeuses à une autorité expose à un plafond de…",
+ o:["7,5 M€ ou 1 % du CA mondial","15 M€ ou 3 %","35 M€ ou 7 %","4 % du CA comme le RGPD"],a:0,
+ e:"Art. 99(5)."},
+/* ---------- M9 ---------- */
+{id:"m9c1a",c:"m9c1",t:"s",p:"Un assistant d’IA pour les RH traite des données de salariés. Quelle affirmation est exacte ?",
+ o:["L’AI Act remplace le RGPD pour les systèmes d’IA","AI Act et RGPD s’appliquent cumulativement : l’AI Act régit le produit et son usage, le RGPD le traitement des données","Seul le RGPD s’applique, l’outil étant interne","Aucun des deux ne s’applique si l’éditeur est hors UE"],a:1,
+ e:"Les deux régimes se cumulent dès qu’un système d’IA traite des données personnelles."},
+{id:"m9c1b",c:"m9c1",t:"m",p:"Quels points relèvent du RGPD plutôt que de l’AI Act ?",
+ o:["La base légale du traitement","La minimisation et la durée de conservation des données","L’information des personnes (RGPD art. 13 et 14)","Le marquage CE du système","La classification Annexe III"],a:[0,1,2],
+ e:"Marquage CE et classification relèvent de l’AI Act. Les principes de traitement relèvent du RGPD."},
+{id:"m9c2a",c:"m9c2",t:"s",p:"Un organisme public déploie un système haut risque traitant des données personnelles et a déjà réalisé une AIPD. Pour la FRIA…",
+ o:["Elle devient inutile","Il peut faire renvoi à l’AIPD ou en reprendre les parties pertinentes, et compléter ce qui est propre à la FRIA","Le fournisseur la réalise à sa place","Elle doit être menée sans tenir compte de l’AIPD"],a:1,
+ e:"L’art. 27(4) permet de s’appuyer sur l’AIPD pour les obligations déjà couvertes. La FRIA reste due pour le reste."},
+{id:"m9c2b",c:"m9c2",t:"s",p:"Quand une AIPD (RGPD art. 35) est-elle notamment obligatoire ?",
+ o:["Pour tout traitement de données, sans exception","Lorsque le traitement est susceptible d’engendrer un risque élevé, par exemple une évaluation systématique fondée sur un traitement automatisé","Jamais lorsque l’AI Act s’applique","Uniquement pour les organismes publics"],a:1,
+ e:"L’art. 35 cite notamment l’évaluation systématique fondée sur un traitement automatisé, le traitement à grande échelle de données sensibles et la surveillance systématique."},
+{id:"m9c3a",c:"m9c3",t:"s",p:"Un refus de crédit est décidé uniquement par un système d’IA, sans intervention humaine. Quels textes encadrent ce point ?",
+ o:["Le RGPD (art. 22 sur la décision uniquement automatisée) et, côté AI Act, le contrôle humain (art. 14) et le droit à l’explication (art. 86)","Uniquement l’art. 50 de l’AI Act","Uniquement le droit de la consommation","Aucun texte"],a:0,
+ e:"Les deux textes se complètent : droit de ne pas faire l’objet d’une décision uniquement automatisée, supervision humaine du système et explication de la décision."},
+{id:"m9c3b",c:"m9c3",t:"s",p:"Auprès de qui une personne exerce-t-elle le droit à l’explication de l’art. 86 ?",
+ o:["Le déployeur","Le fournisseur du système","L’autorité de surveillance du marché","La Commission"],a:0,
+ e:"L’art. 86 permet d’obtenir du déployeur des explications sur le rôle du système et les principaux éléments de la décision."},
+{id:"m9c4a",c:"m9c4",t:"s",p:"L’art. 4a introduit par l’Omnibus…",
+ o:["Oblige à tester tous les systèmes contre les biais","Fournit une base juridique exceptionnelle, avec garanties, pour traiter des catégories particulières de données afin de détecter et corriger les biais, sans créer d’obligation","Interdit tout traitement de données sensibles par une IA","Supprime l’art. 22 du RGPD"],a:1,
+ e:"Le texte précise expressément qu’il ne crée pas d’obligation de procéder à cette détection."},
+{id:"m9c4b",c:"m9c4",t:"m",p:"Quelles affirmations sur l’art. 4a sont exactes ?",
+ o:["Il remplace l’ancien art. 10(5)","Il couvre aussi les déployeurs de systèmes haut risque","Il impose de tester tous les systèmes contre les biais","Il autorise ce traitement sans garanties","Il écarte le RGPD pour les systèmes d’IA"],a:[0,1],
+ e:"L’art. 4a élargit le champ de l’ancien art. 10(5), sous garanties, et ne crée aucune obligation de détection. Le RGPD continue de s’appliquer."},
+/* ---------- M10 ---------- */
+{id:"m10c1a",c:"m10c1",t:"s",p:"Quel est l’ordre de la méthode d’audit en cinq étapes ?",
+ o:["Décrire, qualifier le rôle, qualifier le risque, lister les obligations datées, plan d’action 30/60/90 jours","Qualifier le risque, décrire, plan d’action, qualifier le rôle, lister","Lister les obligations, décrire, qualifier le rôle, plan d’action, qualifier le risque","Plan d’action, décrire, qualifier le risque, qualifier le rôle, lister"],a:0,
+ e:"On ne qualifie bien que ce que l’on a décrit ; les obligations dépendent du rôle et du risque ; le plan d’action vient en dernier."},
+{id:"m10c1b",c:"m10c1",t:"s",p:"À l’étape « qualifier le risque », quel test faut-il effectuer en premier ?",
+ o:["Vérifier si l’usage relève d’une pratique interdite (art. 5)","Vérifier l’art. 50","Calculer l’amende maximale","Vérifier l’Annexe III"],a:0,
+ e:"Une pratique interdite clôt l’analyse : on ne déploie pas. Viennent ensuite l’Annexe I, l’Annexe III avec la dérogation 6(3), puis l’art. 50."},
+{id:"m10c2a",c:"m10c2",t:"m",p:"Un agent IA de prospection B2B, acheté à un éditeur, converse avec des prospects à partir de données d’un CRM et de pages web. Quels points traiter ?",
+ o:["Faire savoir aux prospects qu’ils échangent avec une IA (art. 50)","La base légale RGPD de la prospection et le droit d’opposition","Des tests contre l’injection de prompt via les contenus externes","Un marquage CE","Une qualification haut risque Annexe III, domaine emploi"],a:[0,1,2],
+ e:"La prospection commerciale ne relève pas de l’Annexe III. Les enjeux sont la transparence, le RGPD et la sécurité de l’agent."},
+{id:"m10c2b",c:"m10c2",t:"s",p:"Quel contrôle limite le mieux le risque qu’un agent de prospection envoie des messages erronés ou détournés ?",
+ o:["La validation humaine des envois et la journalisation des actions de l’agent","Un modèle plus grand","Un marquage CE","Une analyse d’impact sur les droits fondamentaux"],a:0,
+ e:"La validation humaine et les journaux permettent de détecter et de corriger un détournement, par exemple par injection de prompt."},
+{id:"m10c3a",c:"m10c3",t:"m",p:"Quels contrôles sont pertinents pour un assistant RAG interne sur documents clients ?",
+ o:["L’héritage des droits d’accès documentaires","Le cloisonnement par client","La journalisation des requêtes et une durée de conservation définie","Une clause de non-réutilisation des données par le fournisseur","Un marquage CE obligatoire","La suppression de l’authentification pour fluidifier l’usage"],a:[0,1,2,3],
+ e:"Le risque principal est la fuite d’information entre utilisateurs ou clients ; les contrôles d’accès au niveau de la récupération des documents sont centraux."},
+{id:"m10c3b",c:"m10c3",t:"s",p:"Le RAG interne sert désormais à proposer l’octroi ou le refus de crédits à des particuliers. Conséquence ?",
+ o:["Rien ne change","L’usage relève de l’Annexe III (solvabilité, score de crédit) : la qualification haut risque est à réexaminer, avec des obligations au 2 décembre 2027","Le système devient interdit","Seul l’art. 50 s’applique"],a:1,
+ e:"Le changement d’usage change la qualification : refaites l’analyse à chaque nouvelle finalité (et examinez la bascule de l’art. 25)."},
+{id:"m10c4a",c:"m10c4",t:"s",p:"En entretien : « Un chatbot client est-il toujours à haut risque ? » La meilleure réponse :",
+ o:["Oui, toujours","Non : il relève en général de l’art. 50 ; il devient haut risque si son usage relève de l’Annexe III","Non, il n’est soumis à aucune règle","Oui, s’il utilise un modèle GPAI"],a:1,
+ e:"C’est l’usage qui détermine le haut risque, pas la technologie."},
+{id:"m10c4b",c:"m10c4",t:"s",p:"En entretien : « Par quoi commenceriez-vous chez nous ? » La réponse la plus solide :",
+ o:["Attendre décembre 2027 pour lancer les travaux","Inventaire et qualification des systèmes, recherche des pratiques interdites (émotions), transparence des chatbots, politique d’usage","Acheter une certification","Interdire toute IA dans l’entreprise"],a:1,
+ e:"Ces actions répondent aux obligations déjà applicables et préparent le haut risque."},
+];
+
+/* ===================== CERTIFICATION EXAM (EN) =====================
+   Same structure as exam_fr.js: same ids, option order and answers. */
+CONTENT.en.CONCEPTS = [
+ {id:"m1c1",lvl:1,l:"Apply the definition of an AI system (inference criterion, Art. 3(1))"},
+ {id:"m1c2",lvl:1,l:"Determine the territorial and personal scope (Art. 2)"},
+ {id:"m1c3",lvl:1,l:"Place a system in the risk-based approach and spot overlapping regimes"},
+ {id:"m1c4",lvl:2,l:"Identify the scope exclusions (military, research, personal use)"},
+ {id:"m2c1",lvl:1,l:"Identify the obligations already applicable (prohibitions and Art. 4 since 02/02/2025)"},
+ {id:"m2c2",lvl:1,l:"Date transparency (Art. 50, 02/08/2026) and the marking grace period (02/12/2026)"},
+ {id:"m2c3",lvl:1,l:"Date high-risk obligations after the Omnibus (Annex III: 02/12/2027; Annex I: 02/08/2028)"},
+ {id:"m2c4",lvl:2,l:"Apply the transitional regime (Art. 111) to existing systems and models"},
+ {id:"m3c1",lvl:1,l:"Distinguish provider and deployer (Art. 3(3) and 3(4))"},
+ {id:"m3c2",lvl:1,l:"Spot when a deployer becomes a provider (Art. 25)"},
+ {id:"m3c3",lvl:1,l:"Identify importer, distributor and authorised representative"},
+ {id:"m3c4",lvl:2,l:"Turn the value chain into contract clauses (Art. 25(2), 25(4), 99(4))"},
+ {id:"m4c1",lvl:1,l:"Recognise the prohibited practices of Art. 5"},
+ {id:"m4c2",lvl:1,l:"Apply the ban on emotion recognition at work and in education"},
+ {id:"m4c3",lvl:1,l:"Know the maximum fine for prohibited practices (Art. 99(3))"},
+ {id:"m4c4",lvl:2,l:"Master the biometric prohibitions and the Omnibus additions"},
+ {id:"m5c1",lvl:2,l:"Classify a high-risk system through Annex I or Annex III (Art. 6)"},
+ {id:"m5c2",lvl:2,l:"Apply the Art. 6(3) derogation and its limit (profiling)"},
+ {id:"m5c3",lvl:2,l:"List the requirements and obligations of a high-risk system provider"},
+ {id:"m5c4",lvl:2,l:"List the obligations of a high-risk system deployer (Art. 26, 27, 86)"},
+ {id:"m6c1",lvl:1,l:"Apply the disclosure obligation for interactive systems (Art. 50(1))"},
+ {id:"m6c2",lvl:1,l:"Handle deep fakes and the marking of generated content"},
+ {id:"m6c3",lvl:1,l:"Apply the rule on public-interest text and the editorial exception (Art. 50(4))"},
+ {id:"m6c4",lvl:2,l:"Know the marking grace period and the Art. 50 maximum fine"},
+ {id:"m7c1",lvl:2,l:"List the obligations of every general-purpose AI model provider (Art. 53)"},
+ {id:"m7c2",lvl:2,l:"Identify a model with systemic risk and its obligations (Art. 51 and 55)"},
+ {id:"m7c3",lvl:2,l:"Position a company that builds a GPAI model into its product"},
+ {id:"m7c4",lvl:2,l:"Know the code of practice and the GPAI fines regime (Art. 101)"},
+ {id:"m8c1",lvl:1,l:"Implement the rewritten Art. 4 (obligation of means and evidence)"},
+ {id:"m8c2",lvl:1,l:"Build AI governance (inventory, classification, policy, procurement, training)"},
+ {id:"m8c3",lvl:1,l:"Frame use through an acceptable-use policy and procurement checks"},
+ {id:"m8c4",lvl:2,l:"Determine maximum fines, including SMEs and small mid-caps (Art. 99)"},
+ {id:"m9c1",lvl:2,l:"Combine the AI Act and the GDPR (overlapping regimes)"},
+ {id:"m9c2",lvl:2,l:"Combine the DPIA (GDPR Art. 35) and the FRIA (Art. 27)"},
+ {id:"m9c3",lvl:2,l:"Frame automated decision-making (GDPR Art. 22, AI Act Art. 14 and 86)"},
+ {id:"m9c4",lvl:2,l:"Apply Art. 4a on bias detection and correction"},
+ {id:"m10c1",lvl:2,l:"Run the five-step audit method"},
+ {id:"m10c2",lvl:2,l:"Analyse a sales prospecting AI agent (role, Art. 50, GDPR, security)"},
+ {id:"m10c3",lvl:2,l:"Define the controls of a RAG assistant and detect a change of use"},
+ {id:"m10c4",lvl:2,l:"Argue in an interview about the scope and timeline of the AI Act"},
+];
+
+CONTENT.en.EXAM = [
+/* ---------- M1 ---------- */
+{id:"m1c1a",c:"m1c1",t:"s",p:"A vendor sells premium-calculation software that applies a rate table written entirely by actuaries (age bands, fixed coefficients). It learns nothing from data. Under Art. 3(1), this software…",
+ o:["Is an AI system, since it produces decisions","Is in principle not an AI system: it applies rules defined by humans, with no inference","Is a high-risk AI system under Annex III","Is a general-purpose AI model"],a:1,
+ e:"Inference is the decisive criterion. Software that only executes rules written by humans is in principle not an AI system. If in doubt, rely on the Commission guidelines on the definition."},
+{id:"m1c1b",c:"m1c1",t:"m",p:"Which elements are part of the definition of an AI system in Art. 3(1)?",
+ o:["A machine-based system","Designed to operate with some level of autonomy","That infers, from the input it receives, how to generate outputs","That must use a neural network","That is sold under a paid licence"],a:[0,1,2],
+ e:"Machine, autonomy and inference are part of the definition (with possible adaptiveness after deployment). No technique is imposed, and a system supplied free of charge is still covered."},
+{id:"m1c2a",c:"m1c2",t:"s",p:"A company established in Singapore, with no presence in the EU, provides a scoring service to a bank in Lyon. The system runs in Singapore; only the scores are sent to and used in France. The AI Act…",
+ o:["Does not apply, because the system is not hosted in the EU","Applies: it also covers non-EU providers whose system output is used in the EU","Applies to the bank, but never to the provider","Will only apply once an authorised representative is appointed"],a:1,
+ e:"Art. 2 has extraterritorial reach: it covers providers and deployers established outside the EU where the output of the system is used in the Union."},
+{id:"m1c2b",c:"m1c2",t:"s",p:"Which of these actors is NOT within the scope of the AI Act?",
+ o:["A US provider placing a system on the EU market","A company established in Germany using an AI tool for its teams","A person using an AI assistant to plan their personal holidays","An importer established in Belgium"],a:2,
+ e:"Purely personal, non-professional use by a natural person is excluded. The other actors are operators covered by Art. 2."},
+{id:"m1c3a",c:"m1c3",t:"m",p:"Which statements about the risk-based approach are correct?",
+ o:["Prohibited practices fall under Art. 5","Transparency obligations (chatbots, deep fakes) fall under Art. 50","A minimal-risk system has no specific obligation beyond Art. 4; voluntary codes of conduct are possible","General-purpose AI models are classified as high risk by default","High risk depends on the provider’s turnover"],a:[0,1,2],
+ e:"The four levels are: prohibited (Art. 5), high risk (Art. 6 to 49), transparency (Art. 50), minimal. GPAI models have a separate regime (Chapter V), and classification depends on use, not on company size."},
+{id:"m1c3b",c:"m1c3",t:"s",p:"A chatbot conducts pre-screening interviews with job applicants and scores their answers. The most accurate classification:",
+ o:["Art. 50 only, since it is a chatbot","High risk (Annex III, employment) plus the Art. 50 transparency obligations","Minimal risk","Prohibited practice"],a:1,
+ e:"Regimes can overlap: the use (selecting candidates) makes the system high risk, and interacting with people triggers Art. 50."},
+{id:"m1c4a",c:"m1c4",t:"s",p:"A university lab develops a tumour-detection model solely for its research work, without placing it on the market. During this phase…",
+ o:["It falls under the scientific research and development exclusion (Art. 2), to be interpreted strictly","It is high risk under Annex I from the first prototype","It must be CE-marked before any test","It is prohibited"],a:0,
+ e:"Systems developed and put into service for the sole purpose of scientific research are excluded. The exclusion ends if the system is placed on the market or used outside that context; document the reason."},
+{id:"m1c4b",c:"m1c4",t:"m",p:"Which uses are excluded from the scope of the AI Act?",
+ o:["Use exclusively for military, defence or national security purposes","Purely personal, non-professional use by a natural person","Internal use by a company for its employees","Use by a public administration","A system made available free of charge"],a:[0,1],
+ e:"Internal use is still professional use, a public administration is a deployer like any other, and the provider definition covers supply “whether for payment or free of charge”."},
+/* ---------- M2 ---------- */
+{id:"m2c1a",c:"m2c1",t:"m",p:"In October 2026, which obligations already apply to a company that deploys AI tools?",
+ o:["The Art. 5 prohibitions","The Art. 4 AI literacy measures","Disclosing the deep fakes it publishes (Art. 50)","The Annex III high-risk deployer obligations (Art. 26)","The Annex I high-risk obligations"],a:[0,1,2],
+ e:"Prohibitions and Art. 4 since 02/02/2025, Art. 50 since 02/08/2026. High risk is postponed to 02/12/2027 (Annex III) and 02/08/2028 (Annex I)."},
+{id:"m2c1b",c:"m2c1",t:"s",p:"Since when has the ban on recognising employees’ emotions applied?",
+ o:["1 August 2024","2 February 2025","2 August 2026","2 December 2026"],a:1,
+ e:"All the original Art. 5 prohibitions have applied since 2 February 2025. 2 December 2026 only concerns the two prohibitions added by the Omnibus."},
+{id:"m2c2a",c:"m2c2",t:"s",p:"A vendor has been selling an image generator since 2025. What is its position under Art. 50 on 22 October 2026?",
+ o:["Art. 50 has applied since 2 August 2026, and it has until 2 December 2026 for machine-readable marking of generated content","Nothing applies before 2 December 2027","It is exempt because its system predates 2026","It must stop selling its tool"],a:0,
+ e:"The Omnibus did not postpone Art. 50. It only granted generative systems placed on the market before 2 August 2026 a marking grace period until 2 December 2026."},
+{id:"m2c2b",c:"m2c2",t:"s",p:"A colleague claims: “with the Omnibus, chatbot obligations are postponed to the end of 2027”. This is…",
+ o:["Correct","Wrong: only high risk was postponed; Art. 50 has applied since 2 August 2026","Correct for SMEs only","Correct, except for deep fakes"],a:1,
+ e:"The Omnibus postponement concerns the high-risk obligations. Chatbot transparency (Art. 50(1)) has applied since 2 August 2026."},
+{id:"m2c3a",c:"m2c3",t:"s",p:"The IT department is building its roadmap: a CV-screening tool (Annex III) and AI software built into an industrial machine subject to third-party assessment (Annex I). Which application dates for the high-risk obligations should it use?",
+ o:["02/12/2027 for CV screening; 02/08/2028 for the machine","02/08/2026 for both","02/08/2028 for CV screening; 02/12/2027 for the machine","02/08/2027 for both"],a:0,
+ e:"After the Omnibus: Annex III on 2 December 2027 (instead of 2 August 2026), Annex I on 2 August 2028 (instead of 2 August 2027)."},
+{id:"m2c3b",c:"m2c3",t:"s",p:"Why was high risk postponed, and what follows for a project?",
+ o:["Notably because harmonised standards were late; the postponement gives time to prepare, not an exemption","High risk was deemed useless and will be abolished","SMEs are now exempt","A transposing directive must now be awaited"],a:0,
+ e:"Delays in harmonised standards motivated the postponement. The obligations still apply at the new dates: keep preparing for compliance."},
+{id:"m2c4a",c:"m2c4",t:"s",p:"A CV-screening tool used by a private company was put into service in 2026 and is not modified afterwards. Under Art. 111(2) as amended by the Omnibus…",
+ o:["It must be brought into compliance by 2 December 2027 in any case","The high-risk requirements only apply to it if it later undergoes significant changes in its design","It is permanently exempt, even after a complete redesign","It must be withdrawn from the market"],a:1,
+ e:"Systems placed on the market or put into service before the application date of Chapter III are only covered if their design changes significantly. Exception: systems intended for use by public authorities must comply by 2 August 2030 at the latest."},
+{id:"m2c4b",c:"m2c4",t:"s",p:"A provider placed its general-purpose AI model on the market in March 2025. It must comply with Chapter V by…",
+ o:["2 August 2025","2 August 2026","2 August 2027","2 December 2027"],a:2,
+ e:"Art. 111(3): GPAI models placed on the market before 2 August 2025 have until 2 August 2027. Models placed on the market after that date are subject to Chapter V as soon as they are placed on the market."},
+/* ---------- M3 ---------- */
+{id:"m3c1a",c:"m3c1",t:"s",p:"A mutual insurer has an IT services firm develop an AI tool, then puts it into service for its own use under its own name. Who is the provider?",
+ o:["The IT services firm alone, since it wrote the code","The insurer: it had the system developed and puts it into service under its own name","Nobody, because the tool is not sold","The cloud host"],a:1,
+ e:"Art. 3(3) covers whoever develops a system, or has it developed, and places it on the market or puts it into service under its own name, for payment or free of charge. The insurer is also the deployer of the tool."},
+{id:"m3c1b",c:"m3c1",t:"m",p:"An SME subscribes to an AI writing-assistant SaaS for its sales staff. Which statements are correct?",
+ o:["It is a deployer","It must take AI literacy measures (Art. 4)","It becomes the provider of the underlying model","It is an importer if the vendor is American","It is out of scope, since it developed nothing"],a:[0,1],
+ e:"Using a system under its authority in a professional capacity makes it a deployer, subject to Art. 4. The importer is the one placing a non-EU entity’s system on the EU market, not the one using it."},
+{id:"m3c2a",c:"m3c2",t:"m",p:"Which of these acts turn a deployer into the provider of a high-risk system (Art. 25)?",
+ o:["Putting its name or trademark on a high-risk system already on the market","Substantially modifying a high-risk system that remains high risk","Changing the purpose of a non-high-risk system so that it becomes high risk","Using the system in line with the instructions for use","Training its staff on the tool"],a:[0,1,2],
+ e:"These are the three Art. 25 cases. Using the system according to the instructions and training users are exactly what is expected of a deployer."},
+{id:"m3c2b",c:"m3c2",t:"s",p:"A school uses a general-purpose writing assistant and decides to use it to grade exam papers automatically. The most accurate analysis:",
+ o:["No impact, the tool remains general-purpose","This change of purpose towards an Annex III use (evaluating learning outcomes) can make the school the provider of a high-risk system","The school becomes a distributor","Only the assistant’s vendor is responsible"],a:1,
+ e:"Diverting the intended purpose towards an Annex III use (point 3, education) shifts the provider’s burden onto the user (Art. 25)."},
+{id:"m3c3a",c:"m3c3",t:"s",p:"A company established in Paris places on the EU market an AI system bearing the name and trademark of a vendor established in Korea. It is…",
+ o:["An importer","A distributor","An authorised representative","A deployer"],a:0,
+ e:"The importer is established in the EU and places on the market a system bearing the name of an entity established outside the EU."},
+{id:"m3c3b",c:"m3c3",t:"s",p:"A provider established in Canada appoints an entity established in the EU to represent it before the authorities. That entity is…",
+ o:["An importer","A distributor","An authorised representative","A provider"],a:2,
+ e:"The authorised representative acts in the EU on behalf of a provider established outside the EU. A distributor makes a system available without being its provider or importer."},
+{id:"m3c4a",c:"m3c4",t:"s",p:"Since the Omnibus, failing to meet the obligations of Art. 25(2) and (4) (cooperation between providers, written agreements with third parties supplying components) falls under…",
+ o:["The Art. 99(4) ceiling: €15m or 3% of worldwide turnover","The Art. 99(3) ceiling: €35m or 7%","The Art. 99(5) ceiling: €7.5m or 1%","No penalty"],a:0,
+ e:"The Omnibus added a point to Art. 99(4) covering the obligations of Art. 25(2) and (4)."},
+{id:"m3c4b",c:"m3c4",t:"m",p:"Which clauses should you prioritise in the contract with the provider of a high-risk system you deploy?",
+ o:["Delivery of the documentation and instructions for use","Compliance support and the necessary technical access","Notification of changes to the system","Transfer to the deployer of all the provider’s legal obligations","Disabling logging to cut costs"],a:[0,1,2],
+ e:"A contract does not change the roles defined by the Regulation: it organises information and cooperation. Logging is a requirement (Art. 12 and 26(6))."},
+/* ---------- M4 ---------- */
+{id:"m4c1a",c:"m4c1",t:"m",p:"Which of these practices are prohibited by Art. 5?",
+ o:["Social scoring leading to unjustified or disproportionate detrimental treatment","Assessing the risk that a person will commit an offence based solely on profiling","Biometric categorisation inferring sexual orientation","A product recommendation engine on a retail website","A CV-screening tool"],a:[0,1,2],
+ e:"The first three are listed in Art. 5. CV screening is high risk (Annex III), not prohibited; product recommendation is usually minimal risk."},
+{id:"m4c1b",c:"m4c1",t:"s",p:"A gaming app aimed at children uses techniques designed to exploit their young age to push them into purchases, causing them significant harm. This is…",
+ o:["A prohibited practice (exploitation of vulnerabilities)","A high-risk system","A mere transparency obligation","Minimal risk"],a:0,
+ e:"Art. 5 prohibits exploiting vulnerabilities due to age, disability or a social or economic situation where this materially distorts behaviour and causes significant harm."},
+{id:"m4c2a",c:"m4c2",t:"s",p:"A university wants to analyse students’ emotions by webcam during online classes to measure their attention. This is…",
+ o:["Allowed with the students’ consent","Prohibited: emotion recognition in an education institution, except for medical or safety reasons","High risk under Annex III, allowed under conditions","Subject only to the Art. 50 disclosure"],a:1,
+ e:"The prohibition only allows exceptions for medical or safety reasons. The text provides no consent-based exception."},
+{id:"m4c2b",c:"m4c2",t:"s",p:"The vendor of your call-centre software offers an “analytics” option that assesses agents’ mood from their voice. What should you do?",
+ o:["Enable it after informing staff (Art. 50)","Refuse or disable the feature: it is a prohibited practice in the workplace","Enable it after a fundamental rights impact assessment (FRIA)","Enable it if the recordings are anonymised"],a:1,
+ e:"Recognising employees’ emotions has been prohibited since 2 February 2025, except for medical or safety reasons. Always check the “analytics” options of purchased tools."},
+{id:"m4c3a",c:"m4c3",t:"s",p:"A large company with €2bn worldwide annual turnover deploys a prohibited practice. What is the theoretical maximum fine?",
+ o:["€35m","€60m","€140m","€20m"],a:2,
+ e:"Art. 99(3): €35m or 7% of worldwide turnover, whichever is higher. 7% of €2bn = €140m, which is more than €35m."},
+{id:"m4c3b",c:"m4c3",t:"s",p:"For a large company, how does the “€35m or 7% of worldwide turnover” ceiling apply?",
+ o:["The higher of the two amounts applies","The lower of the two applies","The average of the two applies","It is always €35m"],a:0,
+ e:"The higher amount applies, except for SMEs and start-ups, for which the lower one applies."},
+{id:"m4c4a",c:"m4c4",t:"s",p:"From what date is an AI system designed to generate non-consensual intimate images of real people (“nudification”) prohibited?",
+ o:["2 February 2025","27 July 2026","2 August 2026","2 December 2026"],a:3,
+ e:"This is one of the two Omnibus additions to Art. 5, together with child sexual abuse material, applicable from 2 December 2026."},
+{id:"m4c4b",c:"m4c4",t:"m",p:"Which statements about the prohibitions are correct?",
+ o:["Building a facial recognition database through untargeted scraping of images from the internet is prohibited","Real-time remote biometric identification in public spaces for law enforcement is prohibited, subject to strict exceptions","The prohibitions only target providers, not deployers","A prohibited practice becomes lawful if an impact assessment is carried out"],a:[0,1],
+ e:"The prohibitions apply to all operators, including deployers. No impact assessment can lift a prohibition."},
+/* ---------- M5 ---------- */
+{id:"m5c1a",c:"m5c1",t:"m",p:"Which of these systems fall under Annex III?",
+ o:["Credit scoring of individuals","Monitoring exams in an education institution","Triage of emergency calls","An email spam filter","A film recommendation engine"],a:[0,1,2],
+ e:"Credit and emergency-call triage fall under essential services (point 5), exam monitoring under education (point 3). The last two are not listed in Annex III."},
+{id:"m5c1b",c:"m5c1",t:"s",p:"AI diagnostic software that is a component of a medical device subject to third-party conformity assessment is high risk through which route?",
+ o:["Art. 6(1) and Annex I, applying from 2 August 2028","Art. 6(2) and Annex III, applying from 2 December 2027","Art. 50 only","Art. 5"],a:0,
+ e:"Products and safety components covered by the Annex I harmonisation legislation and subject to a third party fall under Art. 6(1)."},
+{id:"m5c2a",c:"m5c2",t:"s",p:"An AI tool (employment area) only reformats incoming CVs into a standard template, without scoring or ranking them and without profiling candidates. The provider may…",
+ o:["Consider the Art. 6(3) derogation (narrow procedural task), documenting its assessment and registering the system","Ignore the AI Act, as employment is not concerned","Invoke the same derogation for a tool that ranks candidates through profiling","Request prior authorisation from the Commission"],a:0,
+ e:"The derogation covers, among others, narrow procedural tasks. The provider documents its assessment before placing the system on the market; the registration obligation was kept by the Omnibus."},
+{id:"m5c2b",c:"m5c2",t:"s",p:"An Annex III system builds personality profiles of candidates to prepare the recruiter’s work. Can it benefit from the Art. 6(3) derogation?",
+ o:["Yes, since it is a preparatory task","No: a system that profiles natural persons is always considered high risk","Yes, if the recruiter validates the final decision","Yes, if the provider is an SME"],a:1,
+ e:"Profiling of natural persons rules out the derogation, however preparatory the task."},
+{id:"m5c3a",c:"m5c3",t:"m",p:"Which of these are obligations of the provider of a high-risk system?",
+ o:["A risk management system throughout the lifecycle (Art. 9)","A quality management system (Art. 17)","The conformity assessment, the EU declaration of conformity and the CE marking","Carrying out the FRIA instead of the deployer","Obtaining the consent of each person concerned"],a:[0,1,2],
+ e:"The FRIA (Art. 27) is for certain deployers. Consent is not an AI Act requirement (the legal basis is a GDPR matter)."},
+{id:"m5c3b",c:"m5c3",t:"s",p:"Which requirement aims to ensure that a person can understand the system’s limits, disregard its output, intervene or stop it?",
+ o:["Human oversight (Art. 14)","Record-keeping (Art. 12)","Data governance (Art. 10)","Accuracy and robustness (Art. 15)"],a:0,
+ e:"Art. 14 requires a design that allows effective human oversight, including against automation bias."},
+{id:"m5c4a",c:"m5c4",t:"m",p:"A company deploys a high-risk tool supporting internal promotion decisions. Which obligations does it have?",
+ o:["Assign human oversight to competent, trained people with the necessary authority","Keep the logs under its control for at least six months","Inform workers’ representatives and the workers concerned before putting it into service","Carry out the conformity assessment and affix the CE marking","Draw up the Annex IV technical documentation"],a:[0,1,2],
+ e:"Art. 26: human oversight, logs (26(6)), informing workers (26(7)). Conformity, CE marking and technical documentation are provider obligations."},
+{id:"m5c4b",c:"m5c4",t:"s",p:"Which of these deployers must carry out a fundamental rights impact assessment (Art. 27)?",
+ o:["A bank using a system to assess the creditworthiness of individuals","A manufacturing company using a CV-screening tool","An electricity grid operator using a grid management system","An SME using a support chatbot"],a:0,
+ e:"Art. 27 covers bodies governed by public law, private entities providing public services and deployers of credit (Annex III 5(b)) or life and health insurance (5(c)) systems. Critical infrastructure (point 2) is excluded."},
+/* ---------- M6 ---------- */
+{id:"m6c1a",c:"m6c1",t:"s",p:"Who bears the Art. 50(1) obligation to let people know they are interacting with an AI?",
+ o:["The provider, who designs the system accordingly, unless it is obvious","The deployer only","The end user","The national authority"],a:0,
+ e:"Art. 50(1) targets providers of systems intended to interact with people. In practice, the deployer checks that the purchased tool allows it and that the notice is visible."},
+{id:"m6c1b",c:"m6c1",t:"s",p:"An AI voice agent calls patients to book appointments. Which statement is correct?",
+ o:["People must know they are talking to an AI, unless it is obvious from the context","This system is prohibited","It is high risk by nature","No obligation, because the exchange is spoken"],a:0,
+ e:"The disclosure obligation covers any interaction, written or spoken. Booking appointments is not in itself an Annex III use."},
+{id:"m6c2a",c:"m6c2",t:"s",p:"Your communications team publishes a video in which the CEO, recreated by AI, gives a speech he never filmed. Obligation?",
+ o:["None, since it is the CEO himself","Your company, as deployer, discloses that the content has been generated or manipulated","Only the tool’s provider must act","Obtain a CE marking for the video"],a:1,
+ e:"The duty to disclose deep fakes lies with the deployer (Art. 50(4)). The consent of the person depicted does not remove it."},
+{id:"m6c2b",c:"m6c2",t:"m",p:"Which statements about deep fakes and generated content are correct?",
+ o:["Disclosing a deep fake is the deployer’s duty","Adjustments exist for evidently artistic or satirical works","Machine-readable marking of generated content is the duty of the generative system’s provider","Deep fakes are prohibited by Art. 5","These obligations will only apply in 2027"],a:[0,1,2],
+ e:"Deep fakes are not prohibited as such: they must be disclosed. Art. 50 has applied since 2 August 2026."},
+{id:"m6c3a",c:"m6c3",t:"s",p:"A media outlet publishes a news article written by AI, reviewed and approved by a journalist who takes editorial responsibility. Is an AI notice required under Art. 50(4)?",
+ o:["Yes, always","No: human review under editorial responsibility is an exception; keep a record of that review","Yes, unless the text is under 500 words","No, because media are excluded from the AI Act"],a:1,
+ e:"The exception relies on human review and editorial responsibility. You must be able to prove it."},
+{id:"m6c3b",c:"m6c3",t:"s",p:"To inform the public on a matter of public interest, a marketing team publishes on its blog an AI-generated text with no review at all. It must…",
+ o:["Do nothing","Disclose that the text was generated by AI","Carry out a FRIA","Obtain the authority’s approval"],a:1,
+ e:"Without human review and editorial responsibility, the deployer discloses the AI origin of text published to inform the public on matters of public interest."},
+{id:"m6c4a",c:"m6c4",t:"s",p:"Maximum fine for breaching the Art. 50 obligations?",
+ o:["€15m or 3% of worldwide turnover","€35m or 7%","€7.5m or 1%","No penalty provided"],a:0,
+ e:"Transparency obligations fall under Art. 99(4)."},
+{id:"m6c4b",c:"m6c4",t:"s",p:"The grace period until 2 December 2026 provided by the Omnibus concerns…",
+ o:["All Art. 50 obligations","Only machine-readable marking (Art. 50(2)) for generative systems placed on the market before 2 August 2026","Informing people who interact with a chatbot","Disclosing deep fakes"],a:1,
+ e:"This grace period is strictly limited to the technical marking of generative systems already on the market (Art. 111(4))."},
+/* ---------- M7 ---------- */
+{id:"m7c1a",c:"m7c1",t:"m",p:"What are the obligations of every provider of a general-purpose AI model (Art. 53)?",
+ o:["Draw up and keep up to date the model’s technical documentation","Provide information to downstream providers integrating the model","Put in place a copyright policy, including on reservations of rights","Publish a sufficiently detailed summary of the training content","Affix a CE marking to the model","Carry out a FRIA"],a:[0,1,2,3],
+ e:"These are the four baseline obligations of Art. 53. CE marking and the FRIA belong to the high-risk systems regime."},
+{id:"m7c1b",c:"m7c1",t:"s",p:"A model released under a free and open-source licence, with published weights and no systemic risk…",
+ o:["Is entirely excluded from Chapter V","Is exempt from certain documentation obligations, but remains subject to the copyright policy and the training content summary","Is presumed to have systemic risk","Must be withdrawn from the market"],a:1,
+ e:"Art. 53(2) lifts the documentation obligations (points a and b) for these models, not the others. The relief does not apply where there is systemic risk."},
+{id:"m7c2a",c:"m7c2",t:"s",p:"A model was trained with 3 × 10^25 FLOP of cumulative compute. Consequence?",
+ o:["It is prohibited","It is presumed to have systemic risk: additional Art. 55 obligations","It becomes an Annex III high-risk system","Nothing beyond Art. 53"],a:1,
+ e:"Above 10^25 FLOP, the model is presumed to have systemic risk (Art. 51). The Commission can adjust this threshold."},
+{id:"m7c2b",c:"m7c2",t:"m",p:"Which obligations are added for a model with systemic risk (Art. 55)?",
+ o:["Evaluate the model, including adversarial testing","Assess and mitigate systemic risks","Track and report serious incidents","Register every end user","Affix a CE marking"],a:[0,1,2],
+ e:"Art. 55 also adds an adequate level of cybersecurity. Registering users and CE marking are not part of it."},
+{id:"m7c3a",c:"m7c3",t:"s",p:"A company builds an assistant on a GPAI model’s API and sells it under its own brand to recruitment firms to pre-screen candidates. It is…",
+ o:["The provider of the GPAI model","The provider of a high-risk AI system (Annex III, employment), but not of the model","A mere deployer","Out of scope, because the model comes from a third party"],a:1,
+ e:"It places a system on the market under its own name: it is its provider, and the intended use is in Annex III. Chapter V obligations stay with the model provider."},
+{id:"m7c3b",c:"m7c3",t:"m",p:"What should a company check with the provider of the model it integrates?",
+ o:["The documentation supplied to integrators","Its copyright policy","Whether it adheres to the GPAI code of practice","The terms on use of your prompts and data for training","The model’s CE marking","The model’s FRIA"],a:[0,1,2,3],
+ e:"These checks secure your own compliance as a provider or deployer. CE marking and the FRIA do not apply to a GPAI model."},
+{id:"m7c4a",c:"m7c4",t:"s",p:"The GPAI code of practice published in July 2025…",
+ o:["Is a voluntary tool that lets model providers demonstrate compliance","Is mandatory for every user company","Replaces Chapter V","Is a harmonised standard leading to CE marking"],a:0,
+ e:"The code of practice is a way to demonstrate compliance with the Chapter V obligations; it does not replace the Regulation."},
+{id:"m7c4b",c:"m7c4",t:"s",p:"Since 2 August 2026, who can fine providers of GPAI models, and up to what ceiling?",
+ o:["The Commission, up to €15m or 3% of worldwide turnover (Art. 101)","The data protection authority, up to 4%","The Commission, up to €35m or 7%","Each Member State, up to €7.5m or 1%"],a:0,
+ e:"Art. 101 gives this power to the Commission (AI Office)."},
+/* ---------- M8 ---------- */
+{id:"m8c1a",c:"m8c1",t:"s",p:"An auditor asks how the company complies with Art. 4. Best answer?",
+ o:["Present the measures taken (differentiated training, materials, attendance, assessments), adapted to people’s knowledge and the context of use","Show an individual certificate guaranteeing each employee’s level","Explain that Art. 4 was deleted by the Omnibus","Explain that it only applies to providers"],a:0,
+ e:"Since the Omnibus, Art. 4 is an obligation of means: you must be able to show what was done, without guaranteeing an individual level."},
+{id:"m8c1b",c:"m8c1",t:"m",p:"Which statements about the rewritten Art. 4 are correct?",
+ o:["It covers providers and deployers","It covers staff and other persons using the systems on their behalf","It does not require any specific level to be guaranteed for a given person","It has its own maximum fine in Art. 99","It only applies from 2027"],a:[0,1,2],
+ e:"Art. 99 sets no specific fine for Art. 4, but a lack of training can weigh in the assessment of other breaches. Art. 4 has applied since 2 February 2025, in its current wording since 27 July 2026."},
+{id:"m8c2a",c:"m8c2",t:"s",p:"Which AI governance sequence is the most coherent?",
+ o:["Inventory, classification, acceptable-use policy, procurement, training","Training, procurement, inventory, classification, acceptable-use policy","Classification, procurement, training, inventory, acceptable-use policy","Acceptable-use policy, training, procurement, classification, inventory"],a:0,
+ e:"Without an inventory, roles and risks cannot be classified; classification then feeds the policy, procurement and training."},
+{id:"m8c2b",c:"m8c2",t:"m",p:"Which information should the AI systems inventory describe?",
+ o:["The purpose","The data used","The provider","The users and the decisions influenced","The number of lines of code"],a:[0,1,2,3],
+ e:"This information is used to classify each system’s role and risk level."},
+{id:"m8c3a",c:"m8c3",t:"s",p:"A salesperson uses an unapproved consumer chatbot to summarise confidential client contracts. The most suitable governance response?",
+ o:["An acceptable-use policy (approved tools, data banned from prompts), training and an approved alternative","A CE marking","A FRIA","An authorised representative"],a:0,
+ e:"This very common risk is handled through the acceptable-use policy and training, with an approved tool to avoid workarounds."},
+{id:"m8c3b",c:"m8c3",t:"s",p:"Which control belongs to the “Procurement” building block of AI governance?",
+ o:["A vendor questionnaire, contract clauses and a review before going live","Staff training","The inventory","The AI notice on the website"],a:0,
+ e:"Procurement is the ideal checkpoint: check the features (for example, no emotion recognition) before the tool enters the company."},
+{id:"m8c4a",c:"m8c4",t:"s",p:"A small mid-cap engages in a prohibited practice. Which ceiling rule applies since the Omnibus?",
+ o:["The higher of the two amounts: Art. 99(6a) only covers paragraphs 4 and 5","The lower of the two amounts","No fine is possible","A fixed amount of 1% of turnover"],a:0,
+ e:"Art. 99(6a) extends the “lower amount” rule to small mid-caps, but not for prohibited practices (paragraph 3)."},
+{id:"m8c4b",c:"m8c4",t:"s",p:"Supplying incorrect, incomplete or misleading information to an authority exposes a company to a ceiling of…",
+ o:["€7.5m or 1% of worldwide turnover","€15m or 3%","€35m or 7%","4% of turnover, as under the GDPR"],a:0,
+ e:"Art. 99(5)."},
+/* ---------- M9 ---------- */
+{id:"m9c1a",c:"m9c1",t:"s",p:"An HR AI assistant processes employee data. Which statement is correct?",
+ o:["The AI Act replaces the GDPR for AI systems","The AI Act and the GDPR apply cumulatively: the AI Act governs the product and its use, the GDPR the processing of data","Only the GDPR applies, as the tool is internal","Neither applies if the vendor is outside the EU"],a:1,
+ e:"Both regimes apply together as soon as an AI system processes personal data."},
+{id:"m9c1b",c:"m9c1",t:"m",p:"Which points fall under the GDPR rather than the AI Act?",
+ o:["The legal basis for processing","Data minimisation and retention period","Informing data subjects (GDPR Art. 13 and 14)","The system’s CE marking","Annex III classification"],a:[0,1,2],
+ e:"CE marking and classification are AI Act matters. Processing principles are GDPR matters."},
+{id:"m9c2a",c:"m9c2",t:"s",p:"A public body deploys a high-risk system processing personal data and has already carried out a DPIA. For the FRIA…",
+ o:["It becomes unnecessary","It can refer to the DPIA or reuse its relevant parts, and complete what is specific to the FRIA","The provider carries it out instead","It must be done without regard to the DPIA"],a:1,
+ e:"Art. 27(4) allows the DPIA to be relied on for the obligations it already covers. The FRIA is still due for the rest."},
+{id:"m9c2b",c:"m9c2",t:"s",p:"When, in particular, is a DPIA (GDPR Art. 35) mandatory?",
+ o:["For any data processing, without exception","When processing is likely to result in a high risk, for example a systematic evaluation based on automated processing","Never when the AI Act applies","Only for public bodies"],a:1,
+ e:"Art. 35 notably mentions systematic evaluation based on automated processing, large-scale processing of special categories of data and systematic monitoring."},
+{id:"m9c3a",c:"m9c3",t:"s",p:"A credit refusal is decided solely by an AI system, with no human involvement. Which rules frame this?",
+ o:["The GDPR (Art. 22 on solely automated decisions) and, on the AI Act side, human oversight (Art. 14) and the right to explanation (Art. 86)","Only Art. 50 of the AI Act","Only consumer law","No rule"],a:0,
+ e:"The two texts complement each other: the right not to be subject to a solely automated decision, human oversight of the system and an explanation of the decision."},
+{id:"m9c3b",c:"m9c3",t:"s",p:"From whom does a person obtain the explanation provided for in Art. 86?",
+ o:["The deployer","The system’s provider","The market surveillance authority","The Commission"],a:0,
+ e:"Art. 86 lets the person obtain from the deployer an explanation of the system’s role and the main elements of the decision."},
+{id:"m9c4a",c:"m9c4",t:"s",p:"Art. 4a, introduced by the Omnibus…",
+ o:["Requires every system to be tested for bias","Provides an exceptional legal basis, with safeguards, for processing special categories of data to detect and correct bias, without creating an obligation","Prohibits any processing of sensitive data by an AI","Repeals GDPR Art. 22"],a:1,
+ e:"The text expressly states that it does not create an obligation to carry out such detection."},
+{id:"m9c4b",c:"m9c4",t:"m",p:"Which statements about Art. 4a are correct?",
+ o:["It replaces former Art. 10(5)","It also covers deployers of high-risk systems","It requires every system to be tested for bias","It allows this processing without safeguards","It sets the GDPR aside for AI systems"],a:[0,1],
+ e:"Art. 4a widens the scope of former Art. 10(5), subject to safeguards, and creates no detection obligation. The GDPR still applies."},
+/* ---------- M10 ---------- */
+{id:"m10c1a",c:"m10c1",t:"s",p:"What is the order of the five-step audit method?",
+ o:["Describe, classify the role, classify the risk, list dated obligations, 30/60/90-day action plan","Classify the risk, describe, action plan, classify the role, list","List the obligations, describe, classify the role, action plan, classify the risk","Action plan, describe, classify the risk, classify the role, list"],a:0,
+ e:"You can only classify what you have described; obligations depend on role and risk; the action plan comes last."},
+{id:"m10c1b",c:"m10c1",t:"s",p:"At the “classify the risk” step, which test comes first?",
+ o:["Check whether the use is a prohibited practice (Art. 5)","Check Art. 50","Calculate the maximum fine","Check Annex III"],a:0,
+ e:"A prohibited practice ends the analysis: do not deploy. Then come Annex I, Annex III with the 6(3) derogation, and Art. 50."},
+{id:"m10c2a",c:"m10c2",t:"m",p:"A B2B prospecting AI agent, bought from a vendor, converses with prospects using CRM data and web pages. Which points must be addressed?",
+ o:["Let prospects know they are interacting with an AI (Art. 50)","The GDPR legal basis for prospecting and the right to object","Testing against prompt injection through external content","A CE marking","An Annex III high-risk classification, employment area"],a:[0,1,2],
+ e:"Sales prospecting is not an Annex III use. The issues are transparency, the GDPR and the agent’s security."},
+{id:"m10c2b",c:"m10c2",t:"s",p:"Which control best limits the risk of a prospecting agent sending wrong or hijacked messages?",
+ o:["Human approval of outgoing messages and logging of the agent’s actions","A larger model","A CE marking","A fundamental rights impact assessment"],a:0,
+ e:"Human approval and logs make it possible to detect and correct a hijack, for example through prompt injection."},
+{id:"m10c3a",c:"m10c3",t:"m",p:"Which controls are relevant for an internal RAG assistant over client documents?",
+ o:["Inheriting document access rights","Segregation by client","Query logging and a defined retention period","A clause preventing the provider from reusing the data","A mandatory CE marking","Removing authentication to make it easier to use"],a:[0,1,2,3],
+ e:"The main risk is information leaking between users or clients; access control at document-retrieval level is central."},
+{id:"m10c3b",c:"m10c3",t:"s",p:"The internal RAG assistant is now used to recommend granting or refusing credit to individuals. Consequence?",
+ o:["Nothing changes","The use falls under Annex III (creditworthiness, credit score): the high-risk classification must be reassessed, with obligations from 2 December 2027","The system becomes prohibited","Only Art. 50 applies"],a:1,
+ e:"A change of use changes the classification: redo the analysis for each new purpose (and examine the Art. 25 switch)."},
+{id:"m10c4a",c:"m10c4",t:"s",p:"In an interview: “Is a customer chatbot always high risk?” The best answer:",
+ o:["Yes, always","No: it usually falls under Art. 50; it becomes high risk if its use falls under Annex III","No, it is subject to no rules","Yes, if it uses a GPAI model"],a:1,
+ e:"It is the use that determines high risk, not the technology."},
+{id:"m10c4b",c:"m10c4",t:"s",p:"In an interview: “Where would you start with us?” The strongest answer:",
+ o:["Wait until December 2027 to start","Inventory and classification of systems, hunting for prohibited practices (emotions), chatbot transparency, acceptable-use policy","Buy a certification","Ban all AI in the company"],a:1,
+ e:"These actions address the obligations that already apply and prepare for high risk."},
+];
+
+/* ===================== EXAMEN FINAL ET RELEVÉ DE COMPÉTENCES =====================
+   Chargé avant app.js : uniquement des constantes et des fonctions (aucun accès à S ou L au chargement). */
+const EXAM_PASS = 0.80, EXAM_DIST = 0.90, EXAM_MIN_PER_Q = 1.5;
+const CONTENT_VER = "2.0 · 22/10/2026";
+let exTimer = null, CONCEPTS = [], EXAM = [];
+
+const RP_CSS = `
+#rp-doc{display:flex;flex-direction:column;gap:28px}
+.rp-page{background:#fff;color:#1d1d1f;border-radius:16px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 8px 28px rgba(0,0,0,.07);padding:44px 52px;width:100%;max-width:880px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI","Helvetica Neue",Arial,sans-serif;font-size:14px;line-height:1.5;letter-spacing:-.005em;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rp-page *{box-sizing:border-box}
+.rp-cert{position:relative;text-align:center;padding:64px 56px 48px}
+.rp-cert::before{content:"";position:absolute;inset:14px;border:1px solid #c8b27a;border-radius:10px;pointer-events:none}
+.rp-cert::after{content:"";position:absolute;inset:19px;border:1px solid #e9dfc4;border-radius:7px;pointer-events:none}
+.rp-kicker{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#8a6d2b;margin:0}
+.rp-ttl{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;font-weight:400;font-size:40px;line-height:1.1;letter-spacing:-.01em;margin:14px 0 26px;color:#1d1d1f}
+.rp-intro{color:#6e6e73;margin:0}
+.rp-name{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;font-size:34px;font-style:italic;line-height:1.2;margin:8px auto 4px;padding:0 0 10px;border-bottom:1px solid #d2d2d7;max-width:520px;min-height:52px;color:#1d1d1f}
+.rp-name.empty{color:#a1a1a6}
+.rp-body{max-width:560px;margin:18px auto 0;font-size:15px;color:#1d1d1f}
+.rp-mention{display:inline-block;margin-top:18px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a6d2b;border:1px solid #c8b27a;border-radius:980px;padding:5px 14px}
+.rp-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:600px;margin:30px auto 0}
+.rp-meta div{display:flex;flex-direction:column;gap:2px}
+.rp-meta b{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;color:#1d1d1f}
+.rp-meta span{font-size:11px;color:#6e6e73;text-transform:uppercase;letter-spacing:.08em}
+.rp-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:40px;text-align:left}
+.rp-sign b{display:block;font-size:14px;font-weight:600;color:#1d1d1f}
+.rp-sign span{font-size:12px;color:#6e6e73}
+.rp-sign .rp-li{font-size:12px;color:#0066cc;text-decoration:none}
+.rp-seal{flex:none;width:96px;height:96px}
+.rp-disc{font-size:10.5px;line-height:1.45;color:#6e6e73;margin:28px auto 0;max-width:640px;text-align:center}
+.rp-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;border-bottom:1px solid #d2d2d7;padding-bottom:16px;margin-bottom:20px}
+.rp-head h2{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",Arial,sans-serif;font-size:24px;font-weight:700;letter-spacing:-.02em;margin:4px 0 0;color:#1d1d1f}
+.rp-ref{font-size:11px;color:#6e6e73;text-align:right;font-variant-numeric:tabular-nums}
+.rp-ids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 24px;margin:0 0 22px}
+.rp-ids div{display:flex;flex-direction:column}
+.rp-ids span{font-size:11px;color:#6e6e73;text-transform:uppercase;letter-spacing:.06em}
+.rp-ids b{font-weight:500;color:#1d1d1f}
+.rp-h3{font-size:13px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:#1d1d1f;margin:22px 0 8px}
+.rp-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.rp-tbl th{text-align:left;font-weight:600;font-size:11px;color:#6e6e73;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid #d2d2d7;background:#f5f5f7}
+.rp-tbl td{padding:6px 8px;border-bottom:1px solid #ececf0;vertical-align:top;color:#1d1d1f}
+.rp-tbl td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rp-tbl tr.grp td{font-weight:600;background:#fafafc;padding-top:9px}
+.rp-tbl tr{break-inside:avoid}
+.rp-st{display:inline-block;white-space:nowrap;font-size:11px;font-weight:600;border-radius:980px;padding:1px 8px}
+.rp-st.ok{background:#e9f6ec;color:#1d6b31}.rp-st.part{background:#fff3d6;color:#7a5200}.rp-st.ko{background:#fdecee;color:#b0001a}.rp-st.quiz{background:#e8f1fc;color:#0058b0}.rp-st.none{background:#f0f0f3;color:#6e6e73}
+.rp-note{font-size:11px;color:#6e6e73;margin:8px 0 0}
+.rp-work{margin:0;padding-left:18px}
+.rp-work li{margin:2px 0}
+.rp-bar{display:inline-block;vertical-align:middle;width:70px;height:5px;border-radius:980px;background:#e8e8ed;overflow:hidden;margin-right:6px}
+.rp-bar i{display:block;height:100%;background:#0071e3}
+@media (max-width:640px){.rp-page{padding:28px 20px}.rp-cert{padding:48px 28px 36px}.rp-ttl{font-size:30px}.rp-name{font-size:26px}.rp-meta{grid-template-columns:1fr}.rp-ids{grid-template-columns:1fr}.rp-foot{flex-direction:column;align-items:flex-start}}
+@page{size:A4;margin:12mm}
+@media print{
+  header.top,footer.foot,#tip,.noprint{display:none!important}
+  html,body{background:#fff!important}
+  main .wrap{padding:0!important;max-width:none!important}
+  #rp-doc{gap:0}
+  .rp-page{box-shadow:none;border-radius:0;max-width:none;padding:8mm 6mm;break-after:page;page-break-after:always}
+  .rp-page:last-child{break-after:auto;page-break-after:auto}
+  .rp-cert{padding:22mm 16mm 14mm}
+}`;
+(()=>{ const st=document.createElement("style"); st.id="rp-css"; st.textContent=RP_CSS; document.head.appendChild(st); })();
+
+/* ---------- Données d'examen ---------- */
+const modOfConcept = cid => cid.replace(/c\d+$/,"");
+const perConcept = () => S.profile==="cadre" ? 2 : 1;
+function examConcepts(){ const p=path(); return CONCEPTS.filter(c=>p.includes(modOfConcept(c.id)) && c.lvl<=lvlMax()); }
+const examQ = id => EXAM.find(q=>q.id===id);
+function examSize(){ return examConcepts().reduce((a,c)=>a+Math.min(perConcept(), EXAM.filter(q=>q.c===c.id).length),0); }
+const examMinutes = n => Math.round(n*EXAM_MIN_PER_Q);
+const examReady = () => path().length>0 && path().every(passed);
+const shuffle = a => { a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const answerSet = q => Array.isArray(q.a) ? q.a : [q.a];
+const sameSet = (x,y) => x.length===y.length && x.every(v=>y.includes(v));
+function attempts(){ return ((S.exam&&S.exam.attempts)||[]).filter(a=>a.profile===S.profile); }
+function bestAttempt(){ const l=attempts(); if(!l.length) return null; return l.reduce((b,a)=> (a.pct>b.pct || (a.pct===b.pct && a.ts>b.ts)) ? a : b); }
+const fmtDate = ts => new Date(ts).toLocaleDateString(S.lang==="fr"?"fr-FR":"en-GB",{day:"numeric",month:"long",year:"numeric"});
+const fmtClock = ms => { const s=Math.max(0,Math.ceil(ms/1000)); return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; };
+
+function startExam(){
+  const ids=[];
+  examConcepts().forEach(c=>{ const v=shuffle(EXAM.filter(q=>q.c===c.id)); ids.push(...v.slice(0,perConcept()).map(q=>q.id)); });
+  const order=shuffle(ids), ord={};
+  order.forEach(id=>{ ord[id]=shuffle(examQ(id).o.map((_,i)=>i)); });
+  const now=Date.now();
+  S.run={ids:order, ord, ans:{}, flags:[], i:0, start:now, end:now+examMinutes(order.length)*60000, profile:S.profile};
+  save(); go({name:"exam"});
+}
+function finishExam(auto){
+  const r=S.run; if(!r) return;
+  if(exTimer){ clearInterval(exTimer); exTimer=null; }
+  let score=0; const byC={}, byM={};
+  r.ids.forEach(id=>{
+    const q=examQ(id); if(!q) return;
+    const ok=sameSet(r.ans[id]||[], answerSet(q)); if(ok) score++;
+    const m=modOfConcept(q.c);
+    (byC[q.c]=byC[q.c]||[0,0]); byC[q.c][1]++; if(ok) byC[q.c][0]++;
+    (byM[m]=byM[m]||[0,0]); byM[m][1]++; if(ok) byM[m][0]++;
+  });
+  const n=r.ids.length, pct=Math.round(score/n*100), ok=score/n>=EXAM_PASS;
+  const att={ts:Date.now(), start:r.start, pct, score, n, passed:ok, dist:ok && score/n>=EXAM_DIST, profile:r.profile, byC, byM, ver:CONTENT_VER, auto:!!auto};
+  S.exam=S.exam||{attempts:[]}; S.exam.attempts=[...(S.exam.attempts||[]), att];
+  S.last={ids:r.ids, ord:r.ord, ans:r.ans, ts:att.ts};
+  S.run=null; save();
+  view={name:"examResult", auto:!!auto};
+}
+
+/* ---------- Écran d'introduction ---------- */
+function renderExamIntro(){
+  const X=L.ex, n=examSize(), min=examMinutes(n), ready=examReady(), done=path().filter(passed).length;
+  app.innerHTML=`<div class="stack-lg" style="max-width:72ch">
+   <div class="module-head"><button class="btn quiet" id="back" style="align-self:flex-start">${L.m.back}</button>
+    <p class="eyebrow">${X.eyebrow}</p><h1>${X.h1}</h1><p class="lede">${X.lede}</p></div>
+   <div class="kpis">
+     <div class="kpi"><b>${n}</b><span>${X.kQ}</span></div>
+     <div class="kpi"><b>${min} min</b><span>${X.kT}</span></div>
+     <div class="kpi"><b>${EXAM_PASS*100} %</b><span>${X.kP}</span></div>
+     <div class="kpi"><b>${examConcepts().length}</b><span>${X.kC}</span></div>
+   </div>
+   <div class="panel stack"><h3>${X.rules}</h3><ul class="ex-rules">${X.rulesList(n,min,EXAM_PASS*100,EXAM_DIST*100,perConcept()).map(x=>`<li>${x}</li>`).join("")}</ul></div>
+   ${ready?"":`<div class="notice">${X.locked(done,path().length)}</div>`}
+   <div class="row">${S.run?`<button class="btn" id="go">${X.resume}</button>`:`<button class="btn" id="go" ${ready?"":"disabled"}>${X.start}</button>`}
+     ${attempts().length?`<button class="btn quiet" id="rp">${X.toReport}</button>`:""}</div>
+   <p class="notice">${L.w.notice}</p>
+  </div>`;
+  document.getElementById("back").onclick=()=>go({name:"dash"});
+  document.getElementById("go").onclick=()=> S.run ? go({name:"exam"}) : startExam();
+  const rp=document.getElementById("rp"); if(rp) rp.onclick=()=>go({name:"report"});
+}
+
+/* ---------- Épreuve ---------- */
+function renderExam(){
+  const r=S.run; if(!r) return go({name:"examIntro"});
+  if(Date.now()>=r.end){ finishExam(true); return render(); }
+  const X=L.ex, n=r.ids.length, i=Math.min(Math.max(r.i||0,0),n-1), id=r.ids[i], q=examQ(id);
+  if(!q){ finishExam(false); return render(); }
+  const multi=q.t==="m", sel=r.ans[id]||[], answered=r.ids.filter(x=>(r.ans[x]||[]).length).length, flagged=r.flags.includes(id);
+  app.innerHTML=`<div class="stack-lg">
+   <div class="ex-head">
+     <div class="stack" style="gap:2px"><p class="eyebrow">${X.eyebrow} · ${X.q(i+1,n)}</p><span class="hint" id="ex-ans">${X.answered(answered,n)}</span></div>
+     <div class="row"><span class="hint">${X.timeLeft}</span><span class="timer" id="ex-timer" role="timer" aria-live="off">${fmtClock(r.end-Date.now())}</span></div>
+   </div>
+   <div class="ex-grid">
+    <div class="q">
+     <span class="ex-type">${multi?X.multi:X.single}${flagged?` · <span style="color:var(--r-haut)">${X.flagged}</span>`:""}</span>
+     <p class="prompt">${q.p}</p>
+     <div class="opts">${r.ord[id].map(j=>`<label class="opt"><input type="${multi?"checkbox":"radio"}" name="ex" id="ex${j}" value="${j}" ${sel.includes(j)?"checked":""}> <span>${q.o[j]}</span></label>`).join("")}</div>
+     <div class="row" style="justify-content:space-between">
+       <div class="row"><button class="btn quiet" id="prev" ${i===0?"disabled":""}>${X.prev}</button>${i<n-1?`<button class="btn" id="next">${X.next}</button>`:`<button class="btn" id="sub2">${X.submit}</button>`}</div>
+       <button class="btn quiet" id="flag" aria-pressed="${flagged}">${flagged?X.unflag:X.flag}</button>
+     </div>
+    </div>
+    <aside class="panel stack ex-side">
+     <h3 style="font-size:1rem">${X.nav}</h3>
+     <div class="ex-nav">${r.ids.map((x,k)=>`<button data-k="${k}" class="${(r.ans[x]||[]).length?"ans":""} ${k===i?"cur":""} ${r.flags.includes(x)?"flag":""}" aria-label="${X.q(k+1,n)}${(r.ans[x]||[]).length?"":" · "+X.noAns}${r.flags.includes(x)?" · "+X.flagged:""}" ${k===i?'aria-current="true"':""}>${k+1}</button>`).join("")}</div>
+     <p class="hint">${X.legend}</p>
+     <button class="btn ghost" id="sub">${X.submit}</button>
+     <div id="ex-confirm"></div>
+    </aside>
+   </div>
+  </div>`;
+  const upd=()=>{ const v=[...app.querySelectorAll("input[name=ex]:checked")].map(x=>+x.value); if(v.length) r.ans[id]=v; else delete r.ans[id]; save();
+    const a=r.ids.filter(x=>(r.ans[x]||[]).length).length; document.getElementById("ex-ans").textContent=X.answered(a,n);
+    const b=app.querySelector(`.ex-nav [data-k="${i}"]`); if(b) b.classList.toggle("ans",v.length>0); };
+  app.querySelectorAll("input[name=ex]").forEach(x=>x.onchange=upd);
+  const to=k=>{ r.i=k; save(); renderExam(); window.scrollTo({top:0}); };
+  document.getElementById("prev").onclick=()=>to(i-1);
+  const nx=document.getElementById("next"); if(nx) nx.onclick=()=>to(i+1);
+  document.getElementById("flag").onclick=()=>{ r.flags = flagged ? r.flags.filter(x=>x!==id) : [...r.flags,id]; save(); renderExam(); };
+  app.querySelectorAll(".ex-nav [data-k]").forEach(b=>b.onclick=()=>to(+b.dataset.k));
+  const ask=()=>{ const left=n-r.ids.filter(x=>(r.ans[x]||[]).length).length, box=document.getElementById("ex-confirm");
+    box.innerHTML=`<div class="notice stack" style="gap:10px"><span>${X.confirm(left)}</span><div class="row"><button class="btn" id="yes">${X.confirmYes}</button><button class="btn quiet" id="no">${X.cancel}</button></div></div>`;
+    document.getElementById("yes").onclick=()=>{ finishExam(false); render(); window.scrollTo({top:0}); };
+    document.getElementById("no").onclick=()=>{ box.innerHTML=""; };
+    document.getElementById("yes").focus(); };
+  document.getElementById("sub").onclick=ask;
+  const s2=document.getElementById("sub2"); if(s2) s2.onclick=()=>{ ask(); document.getElementById("ex-confirm").scrollIntoView({block:"center"}); };
+  if(exTimer) clearInterval(exTimer);
+  exTimer=setInterval(()=>{
+    const left=r.end-Date.now(), t=document.getElementById("ex-timer");
+    if(!t || !S.run){ clearInterval(exTimer); exTimer=null; return; }
+    t.textContent=fmtClock(left); t.classList.toggle("low", left<5*60000);
+    if(left<=0){ finishExam(true); render(); window.scrollTo({top:0}); }
+  },1000);
+}
+
+/* ---------- Statut des compétences ---------- */
+function conceptStatus(c, att){
+  const m=modOfConcept(c.id);
+  if(att && att.byC[c.id]){ const [ok,n]=att.byC[c.id]; return ok===n?"ok":ok>0?"part":"ko"; }
+  return passed(m) ? "quiz" : "none";
+}
+
+/* ---------- Résultat ---------- */
+function renderExamResult(){
+  const X=L.ex, att=attempts().slice(-1)[0]; if(!att) return go({name:"dash"});
+  const last=S.last && S.last.ts===att.ts ? S.last : null;
+  const title=att.passed?(att.dist?X.passedDist:X.passed):X.failed;
+  const mods=path().filter(m=>att.byM[m]);
+  const wrong=last ? last.ids.filter(id=>{ const q=examQ(id); return q && !sameSet(last.ans[id]||[], answerSet(q)); }) : [];
+  const stLabel=s=>`<span class="chip ${s==="ok"?"ok":s==="part"?"part":s==="ko"?"ko":"acq"}">${X.st[s]}</span>`;
+  app.innerHTML=`<div class="stack-lg">
+   <div class="stack" style="max-width:72ch"><p class="eyebrow">${X.resEyebrow} · ${fmtDate(att.ts)}</p>
+    <h1>${att.pct} % · ${title}</h1>
+    <p class="lede">${X.resLede(att.score,att.n,EXAM_PASS*100)} ${att.passed?X.passNext:X.failNext}</p>
+    ${view.auto||att.auto?`<div class="notice">${X.timeUp}</div>`:""}
+    <div class="row"><button class="btn" id="rp">${X.toReport}</button><button class="btn quiet" id="again">${X.retry}</button><button class="btn quiet" id="dash">${X.back}</button></div></div>
+   <section class="panel stack"><h2 style="font-size:1.3rem">${X.byMod}</h2>
+    <div class="stack" style="gap:10px">${mods.map(m=>{ const [ok,n]=att.byM[m], p=Math.round(ok/n*100); return `<div class="ex-mrow"><span>${esc(modById(m).title)}</span><div class="bar"><i style="width:${p}%;${p<EXAM_PASS*100?"background:var(--r-haut)":""}"></i></div><span class="hint" style="text-align:right">${ok}/${n}</span></div>`; }).join("")}</div></section>
+   <section class="panel stack"><h2 style="font-size:1.3rem">${X.byConcept}</h2>
+    <div class="tbl"><table><thead><tr><th>${L.rp.tCompetence}</th><th>${L.rp.tStatus}</th></tr></thead><tbody>
+     ${examConcepts().map(c=>`<tr><td>${esc(c.l)}</td><td>${stLabel(conceptStatus(c,att))}</td></tr>`).join("")}
+    </tbody></table></div></section>
+   ${wrong.length?`<section class="stack"><h2 style="font-size:1.3rem">${X.correction} (${wrong.length})</h2>
+    ${wrong.map(id=>{ const q=examQ(id), mine=(last.ans[id]||[]), good=answerSet(q);
+      return `<div class="panel stack" style="gap:10px"><span class="hint">${esc(modById(modOfConcept(q.c)).title)} · ${q.t==="m"?X.multi:X.single}</span><p style="font-weight:600;margin:0">${q.p}</p>
+      <p style="margin:0"><b>${X.yourAns} :</b> ${mine.length?mine.map(j=>q.o[j]).join(" ; "):`<i>${X.noAns}</i>`}</p>
+      <p style="margin:0;color:var(--ok)"><b>${X.goodAns} :</b> ${good.map(j=>q.o[j]).join(" ; ")}</p>
+      <div class="feedback ko">${q.e}</div></div>`; }).join("")}</section>`:""}
+  </div>`;
+  document.getElementById("rp").onclick=()=>go({name:"report"});
+  document.getElementById("again").onclick=()=>go({name:"examIntro"});
+  document.getElementById("dash").onclick=()=>go({name:"dash"});
+}
+
+/* ---------- Relevé et attestation ---------- */
+function fnv(s){ let h=0x811c9dc5; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return h.toString(36).toUpperCase().padStart(7,"0").slice(-7); }
+function reportData(){
+  const att=bestAttempt(), pass=attempts().filter(a=>a.passed), passAtt=pass.length?pass.reduce((b,a)=>a.pct>b.pct||(a.pct===b.pct&&a.ts>b.ts)?a:b):null;
+  const use=passAtt||att;
+  const cs=examConcepts().map(c=>({c, st:conceptStatus(c,use)}));
+  const name=(S.learner||"").trim();
+  const ref = use ? `AIA-${new Date(use.ts).getFullYear()}-${fnv([name,S.profile,use.ts,use.pct].join("|"))}` : "—";
+  return {att:use, passAtt, cs, name, ref, n:attempts().length};
+}
+const seal = () => `<svg class="rp-seal" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="rp-arc" d="M60,60 m-44,0 a44,44 0 1,1 88,0 a44,44 0 1,1 -88,0"/></defs>
+ <circle cx="60" cy="60" r="56" fill="none" stroke="#c8b27a" stroke-width="1.5"/><circle cx="60" cy="60" r="34" fill="none" stroke="#c8b27a" stroke-width="1"/>
+ <text font-family="-apple-system,Segoe UI,Arial,sans-serif" font-size="8.5" font-weight="600" letter-spacing="1.6" fill="#8a6d2b"><textPath href="#rp-arc">${esc(L.brand.toUpperCase())} · 2024/1689 · 2026/1744 ·</textPath></text>
+ <text x="60" y="58" text-anchor="middle" font-family="Georgia,serif" font-size="20" fill="#8a6d2b">AI</text><text x="60" y="74" text-anchor="middle" font-family="-apple-system,Segoe UI,Arial,sans-serif" font-size="8" letter-spacing="1.5" fill="#8a6d2b">ACT</text></svg>`;
+function reportHTML(d){
+  const R=L.rp, X=L.ex, prof=PROFILES[S.profile].label, a=d.att, acq=d.cs.filter(x=>x.st==="ok").length;
+  const st=s=>`<span class="rp-st ${s}">${X.st[s]}</span>`;
+  const cert = d.passAtt ? `<section class="rp-page rp-cert">
+    <p class="rp-kicker">${R.cKicker}</p>
+    <h1 class="rp-ttl">${R.cTitle}</h1>
+    <p class="rp-intro">${R.cIntro}</p>
+    <p class="rp-name ${d.name?"":"empty"}">${d.name?esc(d.name):R.namePh}</p>
+    <p class="rp-body">${R.cBody(esc(prof))}</p>
+    <span class="rp-mention">${d.passAtt.dist?R.cMention.dist:R.cMention.pass}</span>
+    <div class="rp-meta"><div><b>${d.passAtt.pct} %</b><span>${R.cScore}</span></div><div><b>${fmtDate(d.passAtt.ts)}</b><span>${R.cDate}</span></div><div><b>${d.ref}</b><span>${R.cRef}</span></div></div>
+    <p class="rp-body" style="font-size:13px;color:#6e6e73;margin-top:18px">${R.cConcepts(acq,d.cs.length)}</p>
+    <div class="rp-foot"><div class="rp-sign"><b>${R.cSign}</b><span>${R.cSignSub}</span><br><a class="rp-li" href="https://www.linkedin.com/in/jeanpierrelaicheong">linkedin.com/in/jeanpierrelaicheong</a></div>${seal()}</div>
+    <p class="rp-disc">${R.cDisc}</p>
+  </section>` : "";
+  const mods=path().map(m=>{ const mo=modById(m), s=S.mods[m]||{}, ok=passed(m), ex=a&&a.byM[m];
+    return `<tr><td>${esc(mo.title)}</td><td class="n">${s.best!=null?s.best+" %":"—"}</td><td class="n">${ex?`<span class="rp-bar"><i style="width:${Math.round(ex[0]/ex[1]*100)}%"></i></span>${ex[0]}/${ex[1]}`:"—"}</td><td><span class="rp-st ${ok?"ok":S.acquired.includes(m)?"quiz":"none"}">${ok?R.modSt.ok:S.acquired.includes(m)?R.modSt.acq:R.modSt.todo}</span></td></tr>`; }).join("");
+  const byMod={}; d.cs.forEach(x=>(byMod[modOfConcept(x.c.id)]=byMod[modOfConcept(x.c.id)]||[]).push(x));
+  const concepts=Object.entries(byMod).map(([m,l])=>`<tr class="grp"><td colspan="2">${esc(modById(m).title)}</td></tr>${l.map(x=>`<tr><td>${esc(x.c.l)}</td><td>${st(x.st)}</td></tr>`).join("")}`).join("");
+  const work=d.cs.filter(x=>["part","ko","none"].includes(x.st));
+  const delivs=S.profile==="resp"?path().filter(m=>S.delivs[m]).map(m=>esc(modById(m).title)):[];
+  const transcript=`<section class="rp-page">
+    <div class="rp-head"><div><p class="rp-kicker">${L.brand}</p><h2>${R.tTitle}</h2></div><div class="rp-ref">${R.cRef} ${d.ref}<br>${R.tIssued} ${fmtDate(Date.now())}</div></div>
+    <div class="rp-ids">
+      <div><span>${R.tHolder}</span><b>${d.name?esc(d.name):"—"}</b></div>
+      <div><span>${R.tProfile}</span><b>${esc(prof)}</b></div>
+      <div><span>${R.tExam}</span><b>${a?R.tExamV(a.pct,a.score,a.n,fmtDate(a.ts),X.attempts(d.n), a.passed?(a.dist?R.cMention.dist:R.cMention.pass):X.failed):R.tExamNone}</b></div>
+      <div><span>${R.tLaw}</span><b>${R.tLawV}</b></div>
+    </div>
+    <p class="rp-h3">${R.tMods}</p>
+    <table class="rp-tbl"><thead><tr><th>${R.tMod}</th><th>${R.tQuiz}</th><th>${R.tExamCol}</th><th>${R.tStatus}</th></tr></thead><tbody>${mods}</tbody></table>
+    <p class="rp-h3">${R.tConcepts} · ${R.cConcepts(acq,d.cs.length)}</p>
+    <table class="rp-tbl"><thead><tr><th>${R.tCompetence}</th><th>${R.tStatus}</th></tr></thead><tbody>${concepts}</tbody></table>
+    <p class="rp-note">${R.tLegend}</p>
+    <p class="rp-h3">${R.tToWork}</p>
+    ${work.length?`<ul class="rp-work">${work.map(x=>`<li>${esc(x.c.l)} <span style="color:#6e6e73">(${esc(modById(modOfConcept(x.c.id)).title)})</span></li>`).join("")}</ul>`:`<p style="margin:0">${R.tNoWork}</p>`}
+    ${delivs.length?`<p class="rp-h3">${R.delivs}</p><p style="margin:0">${delivs.join(" · ")}</p>`:""}
+    <p class="rp-note" style="margin-top:18px">${R.tMethod(a?a.n:examSize(),EXAM_PASS*100)} ${R.tVer} : ${CONTENT_VER}.</p>
+    <p class="rp-note">${R.cDisc}</p>
+  </section>`;
+  return cert+transcript;
+}
+function reportMarkdown(d){
+  const R=L.rp, X=L.ex, a=d.att, prof=PROFILES[S.profile].label, acq=d.cs.filter(x=>x.st==="ok").length;
+  let md=`# ${R.tTitle} — ${L.brand}\n\n`;
+  md+=`- **${R.tHolder}** : ${d.name||"—"}\n- **${R.tProfile}** : ${prof}\n- **${R.tExam}** : ${a?R.tExamV(a.pct,a.score,a.n,fmtDate(a.ts),X.attempts(d.n),a.passed?(a.dist?R.cMention.dist:R.cMention.pass):X.failed):R.tExamNone}\n- **${R.tLaw}** : ${R.tLawV}\n- **${R.cRef}** : ${d.ref}\n- **${R.tIssued}** : ${fmtDate(Date.now())}\n\n`;
+  md+=`## ${R.tMods}\n\n| ${R.tMod} | ${R.tQuiz} | ${R.tExamCol} | ${R.tStatus} |\n|---|---|---|---|\n`;
+  path().forEach(m=>{ const s=S.mods[m]||{}, ex=a&&a.byM[m]; md+=`| ${modById(m).title} | ${s.best!=null?s.best+" %":"—"} | ${ex?ex[0]+"/"+ex[1]:"—"} | ${passed(m)?R.modSt.ok:S.acquired.includes(m)?R.modSt.acq:R.modSt.todo} |\n`; });
+  md+=`\n## ${R.tConcepts} (${R.cConcepts(acq,d.cs.length)})\n\n| ${R.tCompetence} | ${R.tStatus} |\n|---|---|\n`;
+  d.cs.forEach(x=>{ md+=`| ${x.c.l} | ${X.st[x.st]} |\n`; });
+  md+=`\n_${R.tLegend}_\n\n---\n\n_${R.cDisc}_\n`;
+  return md;
+}
+function reportFile(d){
+  const title=`${L.rp.tTitle} — ${d.name||L.brand}`;
+  return `<!doctype html>\n<html lang="${L.htmlLang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title><style>${RP_CSS}\nbody{margin:0;background:#f5f5f7;padding:24px 16px}</style></head><body><div id="rp-doc">${reportHTML(d)}</div></body></html>\n`;
+}
+function renderReport(){
+  const R=L.rp, d=reportData(), top=window.self===window.top;
+  app.innerHTML=`<div class="stack-lg">
+   <div class="stack noprint" style="max-width:72ch"><p class="eyebrow">${R.eyebrow}</p><h1>${R.h1}</h1><p class="lede">${R.lede}</p></div>
+   <div class="panel stack noprint">
+     <label class="stack" style="gap:6px"><b>${R.name}</b><input class="field" id="rp-name" value="${esc(S.learner||"")}" placeholder="${esc(R.namePh)}" maxlength="80" autocomplete="name"></label>
+     <span class="hint">${R.nameHint}</span>
+     ${d.passAtt?"":`<div class="notice">${examReady()?R.noExamReady:R.noExam}</div>`}
+     <div class="row">${top?`<button class="btn" id="rp-print">${R.print}</button><button class="btn ghost" id="rp-dl">${R.dl}</button>`:""}<button class="btn ghost" id="rp-md">${R.md}</button>
+       ${!d.passAtt&&examReady()?`<button class="btn quiet" id="rp-exam">${L.ex.start}</button>`:""}<span class="hint" id="rp-msg"></span></div>
+     ${top?"":`<p class="hint">${R.iframe}</p>`}
+   </div>
+   <div id="rp-doc">${reportHTML(d)}</div>
+  </div>`;
+  const nm=document.getElementById("rp-name"); let t=null;
+  nm.oninput=()=>{ S.learner=nm.value; clearTimeout(t); t=setTimeout(()=>{ save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); },300); };
+  const p=document.getElementById("rp-print"); if(p) p.onclick=()=>{ S.learner=nm.value; save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); window.print(); };
+  const dl=document.getElementById("rp-dl"); if(dl) dl.onclick=()=>{ S.learner=nm.value; save(); const dd=reportData(), aEl=document.createElement("a");
+    aEl.href=URL.createObjectURL(new Blob([reportFile(dd)],{type:"text/html"}));
+    aEl.download=`${R.file}-${(dd.name||"ai-act").toLowerCase().normalize("NFD").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.html`;
+    document.body.appendChild(aEl); aEl.click(); setTimeout(()=>{ URL.revokeObjectURL(aEl.href); aEl.remove(); },500); };
+  document.getElementById("rp-md").onclick=()=>{ const md=reportMarkdown(reportData()), msg=document.getElementById("rp-msg");
+    const show=()=>{ msg.innerHTML=`<textarea readonly id="rp-mdbox" style="min-height:200px;margin-top:8px">${esc(md)}</textarea>`; const b=document.getElementById("rp-mdbox"); b.focus(); b.select(); };
+    try{ navigator.clipboard.writeText(md).then(()=>msg.textContent=R.copied, show); }catch(e){ show(); } };
+  const ex=document.getElementById("rp-exam"); if(ex) ex.onclick=()=>go({name:"examIntro"});
+}
+
+/* ---------- Encart du tableau de bord ---------- */
+function examPanel(){
+  const X=L.ex, n=examSize(), ready=examReady(), b=bestAttempt(), done=path().filter(passed).length;
+  return `<div class="panel ex-panel">
+    <div class="stack" style="gap:6px;flex:1;min-width:240px"><p class="eyebrow">${X.eyebrow}</p><h3>${X.dashTitle}</h3>
+      <p class="hint">${X.dashSub(n,examMinutes(n),EXAM_PASS*100)}</p>
+      <div class="row" style="gap:6px">${b?`<span class="chip ${b.passed?"ok":""}">${X.best(b.pct)}${b.passed?" · "+(b.dist?L.rp.cMention.dist:L.rp.cMention.pass):""}</span><span class="chip">${X.attempts(attempts().length)}</span>`:""}
+      ${!ready?`<span class="chip">${X.lockedShort(done,path().length)}</span>`:""}${S.run?`<span class="chip acq">${X.inProgress}</span>`:""}</div></div>
+    <div class="row">${S.run?`<button class="btn" data-x="exam">${X.resume}</button>`:`<button class="btn ${ready?"":"ghost"}" data-x="examIntro">${ready?X.open:X.see}</button>`}
+      <button class="btn quiet" data-x="report">${L.tabs.report}</button></div>
+  </div>`;
+}
+
 /* ===================== LANGUE ===================== */
 const PASS = 0.75;
 const SHOW_EMAIL = false; /* false dans la version publique (build.py) */
 const I18N = {
  fr:{
   brand:"Parcours AI Act", brandSub:"Règl. (UE) 2024/1689", htmlLang:"fr",
-  tabs:{dash:"Mon parcours",review:"Révisions",tool:"Qualifier un cas",settings:"Profil"},
+  tabs:{dash:"Mon parcours",review:"Révisions",tool:"Qualifier un cas",report:"Relevé",settings:"Profil"},
   foot:{by:"Conçu par", li:"Profil LinkedIn ›", copy:"Copier", copied:"Copié", selected:"Sélectionné",
     disc:"Parcours AI Act est un outil de sensibilisation. Il ne délivre aucune certification officielle et ne constitue pas un avis juridique.",
     upd:'Contenu à jour au 21 octobre 2026, intégrant le règlement Omnibus (UE) 2026/1744. Vérifiez toujours le texte consolidé sur EUR-Lex avant toute décision. Les mentions <span class="verify">à vérifier</span> signalent les points incertains ou évolutifs.'},
@@ -1127,14 +2081,14 @@ const I18N = {
     right:"Réponse correcte", work:"À travailler", acq:"pré-acquis", todo:"à suivre",
     note:"Un module pré-acquis n’est pas validé : seul son quiz (≥ 75 %) le valide. Le test ne comporte qu’une question par module, c’est un indicateur, pas une évaluation.",
     see:"Voir mon parcours", q:(i,n)=>`question ${i} sur ${n}`, dk:"Je ne sais pas", next:"Question suivante", skip:"Passer le test"},
-  d:{h1:"Mon parcours", lv:["Découverte","En progression","Opérationnel","Expert"], valid:"modules validés", level:"niveau atteint",
+  d:{h1:"Mon parcours", lv:["Découverte","En progression","Opérationnel","Parcours validé"], lvExam:"Examen réussi", valid:"modules validés", level:"niveau atteint",
     toReview:n=>`question${n>1?"s":""} à réviser`, delivs:"livrables portfolio", next:"Prochaine étape", resume:"Reprendre", start:"Commencer",
-    done:"Parcours terminé", doneSub:"Entraînez-vous sur l’outil de qualification et révisez vos erreurs avant un entretien.",
+    done:"Parcours terminé", doneSub:"Tous les modules sont validés : l’examen final est ouvert. Réussissez-le pour obtenir votre attestation et votre relevé de compétences.",
     passed:p=>`validé ${p}%`, acq:"pré-acquis", best:p=>`meilleur score ${p}%`, dvDone:"livrable fait", review:"Revoir", open:"Ouvrir", locked:"verrouillé",
     sources:'Sources principales : règlement (UE) 2024/1689 modifié par le règlement (UE) 2026/1744, sur <a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj" target="_blank" rel="noopener">EUR-Lex</a> ; <a href="https://ai-act-service-desk.ec.europa.eu/fr" target="_blank" rel="noopener">AI Act Service Desk</a> de la Commission ; <a href="https://artificialintelligenceact.eu/" target="_blank" rel="noopener">artificialintelligenceact.eu</a> (non officiel).'},
   m:{back:"← Mon parcours", module:"Module", acq:"pré-acquis", quizDirect:"Valider directement par le quiz", deep:"Approfondissement responsable",
     showDeep:n=>`Afficher l’approfondissement (${n})`, key:"À retenir", deliv:"Livrable portfolio", dvResume:p=>`Reprendre dans l’assistant · ${p} %`, dvStart:"Rédiger avec l’assistant",
-    dvHint:"Modèle guidé, sauvegarde automatique, export Markdown", dvDone:"J’ai produit ce livrable", quiz:"Quiz de validation", quizSub:(n,p)=>`${n} questions · seuil ${p} %`, take:"Passer le quiz"},
+    dvHint:"Modèle guidé, sauvegarde automatique, export Markdown", dvDone:"J’ai produit ce livrable", comp:"Compétences évaluées à l’examen final", compSub:"Le quiz du module vérifie les bases ; l’examen final évalue chacune de ces compétences sur des cas pratiques.", quiz:"Quiz de validation", quizSub:(n,p)=>`${n} questions · seuil ${p} %`, take:"Passer le quiz"},
   q:{revision:"Révision", q:(i,n)=>`question ${i} sur ${n}`, validate:"Valider", ok:"Exact.", ko:"Pas tout à fait.", added:" Cette question est ajoutée à vos révisions.",
     next:"Question suivante", result:"Voir le résultat", revDone:"Révision terminée", left:n=>`Il reste ${n} question(s) à revoir.`, empty:"Votre file de révisions est vide.",
     myPath:"Mon parcours", passed:"· module validé", failed:"· seuil non atteint", unlocked:t=>`Le module « ${t} » est débloqué.`, last:"Vous avez validé le dernier module du parcours.",
@@ -1172,11 +2126,52 @@ const I18N = {
     impOk:"Progression importée.", impKo:"Code invalide : collez le texte complet copié depuis « Exporter ».", reset:"Recommencer", resetSub:"Efface le profil, le test de positionnement et toute la progression.",
     resetBtn:"Tout réinitialiser", confirm:"Confirmer la réinitialisation"},
   copy:{ok:"Copié.", sel:"Texte sélectionné : copiez-le avec Ctrl+C."},
+  ex:{eyebrow:"Examen final", h1:"Examen de connaissances AI Act",
+    lede:"Une épreuve de niveau certification : cas pratiques, questions à réponses multiples, aucune correction pendant l’épreuve, temps limité et seuil de réussite de 80 %. Elle s’ouvre quand tous les modules de votre parcours sont validés.",
+    kQ:"questions", kT:"durée", kP:"seuil de réussite", kC:"compétences évaluées", rules:"Règles de l’épreuve",
+    rulesList:(n,min,p,d,per)=>[`${n} questions, ${per===2?"deux":"une"} par compétence évaluée, dans un ordre aléatoire.`,`Durée : ${min} minutes. À la fin du temps, la copie est remise automatiquement, même si vous avez quitté la page.`,`Questions à réponses multiples : cochez toutes les bonnes réponses et aucune mauvaise. La notation est en tout ou rien.`,`Aucune correction pendant l’épreuve. Vous pouvez naviguer entre les questions et en marquer pour y revenir.`,`Seuil de réussite : ${p} %. Mention « avec distinction » à partir de ${d} %.`,per===2?`Chaque tentative mélange l’ordre des questions et des réponses. La correction détaillée s’affiche après la remise.`:`Chaque tentative tire de nouvelles variantes de questions et mélange les réponses. La correction détaillée s’affiche après la remise.`,`Ces seuils et durées sont des paramètres propres à cet outil, pas ceux d’une certification officielle.`],
+    locked:(a,b)=>`Examen verrouillé : validez d’abord tous les modules de votre parcours (${a} sur ${b} validés). Un module « pré-acquis » doit aussi être validé par son quiz.`,
+    lockedShort:(a,b)=>`verrouillé · ${a}/${b} modules`, inProgress:"épreuve en cours",
+    start:"Commencer l’examen", resume:"Reprendre l’épreuve en cours", open:"Préparer l’examen", see:"Voir les conditions",
+    single:"Une seule réponse", multi:"Plusieurs réponses · tout ou rien", flagged:"marquée",
+    q:(i,n)=>`question ${i} sur ${n}`, prev:"‹ Précédente", next:"Suivante ›", flag:"Marquer pour revoir", unflag:"Retirer la marque",
+    answered:(a,n)=>`${a} sur ${n} répondues`, submit:"Remettre ma copie",
+    confirm:n=>n?`${n} question${n>1?"s":""} sans réponse. Remettre quand même votre copie ? Cette action est définitive.`:"Remettre définitivement votre copie ?",
+    confirmYes:"Oui, remettre", cancel:"Continuer l’épreuve", timeLeft:"Temps restant",
+    timeUp:"Temps écoulé : la copie a été remise automatiquement.", nav:"Questions", legend:"Bleu : répondue · point orange : marquée.",
+    resEyebrow:"Résultat de l’examen", passed:"examen réussi", passedDist:"réussi avec distinction", failed:"seuil non atteint",
+    resLede:(s,n,p)=>`${s} bonnes réponses sur ${n} (seuil ${p} %).`, passNext:"Votre attestation est disponible dans le relevé.", failNext:"Relisez les modules dont les compétences sont « à consolider », puis repassez l’examen.",
+    byMod:"Résultat par module", byConcept:"Compétences évaluées",
+    st:{ok:"Acquis",part:"Partiel",ko:"À consolider",quiz:"Validé au quiz",none:"Non étudié"},
+    correction:"Correction des questions manquées", yourAns:"Votre réponse", goodAns:"Bonne réponse", noAns:"sans réponse",
+    toReport:"Voir mon relevé et mon attestation", retry:"Repasser l’examen", back:"Mon parcours",
+    attempts:n=>`${n} tentative${n>1?"s":""}`, dashTitle:"Examen de connaissances AI Act", dashSub:(n,m,p)=>`${n} questions · ${m} min · seuil ${p} % · attestation et relevé de compétences`, best:p=>`meilleur résultat ${p} %`},
+  rp:{eyebrow:"Relevé de compétences", h1:"Mon relevé et mon attestation", file:"releve-ai-act",
+    lede:"Ce document récapitule vos modules, votre résultat à l’examen final et l’état de chaque compétence. L’attestation de réussite s’ajoute en première page dès que l’examen est réussi.",
+    name:"Nom et prénom à faire figurer", namePh:"Votre nom", nameHint:"Enregistré uniquement dans ce navigateur. Il n’est ni vérifié ni transmis.",
+    print:"Imprimer ou enregistrer en PDF", dl:"Télécharger (.html)", md:"Copier en Markdown", copied:"Copié.",
+    iframe:"L’impression et le téléchargement sont disponibles quand le fichier est ouvert directement dans le navigateur.",
+    noExam:"Attestation non disponible : validez tous les modules, puis réussissez l’examen final. Le relevé ci-dessous montre votre progression actuelle.",
+    noExamReady:"Attestation non disponible : tous vos modules sont validés, il reste à réussir l’examen final (80 %).",
+    cKicker:"Parcours AI Act · examen final", cTitle:"Attestation de réussite", cIntro:"Cette attestation est délivrée à",
+    cBody:prof=>`pour la réussite de l’examen final de connaissances du parcours « ${prof} », portant sur le règlement européen sur l’intelligence artificielle (règlement (UE) 2024/1689, modifié par le règlement (UE) 2026/1744).`,
+    cScore:"résultat", cDate:"date de l’examen", cRef:"Référence", cMention:{dist:"Avec distinction",pass:"Réussi"},
+    cConcepts:(a,n)=>`${a} compétence${a>1?"s":""} acquise${a>1?"s":""} sur ${n} évaluée${n>1?"s":""}`,
+    cSign:"Jean-Pierre LAI-CHEONG", cSignSub:"Concepteur de Parcours AI Act",
+    cDisc:"Document généré automatiquement par Parcours AI Act, outil de sensibilisation, à l’issue d’un examen passé en ligne sans surveillance. Ce n’est pas une certification officielle : il n’est reconnu ni accrédité par aucune autorité ni aucun organisme de certification, ne vérifie ni l’identité du titulaire ni les conditions de passation, et ne constitue pas un avis juridique. La référence est calculée localement et ne peut pas être vérifiée par un tiers.",
+    tTitle:"Relevé de compétences", tHolder:"Titulaire", tProfile:"Parcours", tIssued:"édité le", tLaw:"État du droit",
+    tLawV:"21 octobre 2026 · règl. (UE) 2024/1689 modifié par le règl. (UE) 2026/1744", tVer:"Version du contenu",
+    tExam:"Examen final", tExamNone:"Non passé", tExamV:(pct,s,n,d,att,m)=>`${pct} % (${s}/${n}) · ${m} · ${d} · ${att}`,
+    tMods:"Modules du parcours", tMod:"Module", tQuiz:"Quiz (meilleur)", tExamCol:"Examen", tStatus:"Statut", tCompetence:"Compétence",
+    modSt:{ok:"Validé",acq:"Pré-acquis",todo:"Non validé"}, tConcepts:"Compétences",
+    tLegend:"Acquis : toutes les questions d’examen de la compétence sont réussies. Partiel : une partie seulement. À consolider : aucune. Validé au quiz : module validé, compétence pas encore évaluée à l’examen. Non étudié : module non validé.",
+    tMethod:(n,p)=>`Méthode : examen de ${n} questions tirées d’une banque de cas pratiques, seuil ${p} %, questions à réponses multiples notées en tout ou rien. Résultats de la meilleure tentative réussie, à défaut de la meilleure tentative.`,
+    tToWork:"Axes de progression", tNoWork:"Aucun : toutes les compétences évaluées sont acquises.", delivs:"Livrables portfolio déclarés produits"},
   tip:{art:"Article", par:"Paragraphe", gdpr:"RGPD · ", src:"Règlement (UE) 2024/1689 modifié", srcG:"Règlement (UE) 2016/679 (RGPD)", read:"Lire le texte officiel →", foot:"Résumé pédagogique, non officiel", verify:"à vérifier", aria:"afficher le résumé de l’article"},
  },
  en:{
   brand:"AI Act Pathway", brandSub:"Reg. (EU) 2024/1689", htmlLang:"en",
-  tabs:{dash:"My path",review:"Review",tool:"Assess a use case",settings:"Profile"},
+  tabs:{dash:"My path",review:"Review",tool:"Assess a use case",report:"Transcript",settings:"Profile"},
   foot:{by:"Created by", li:"LinkedIn profile ›", copy:"Copy", copied:"Copied", selected:"Selected",
     disc:"AI Act Pathway is an awareness tool. It does not award any official certification and is not legal advice.",
     upd:'Content up to date as of 21 October 2026, including the Digital Omnibus Regulation (EU) 2026/1744. Always check the consolidated text on EUR-Lex before making any decision. Items marked <span class="verify">to be verified</span> flag uncertain or evolving points.'},
@@ -1193,14 +2188,14 @@ const I18N = {
     right:"Correct answer", work:"To work on", acq:"prior knowledge", todo:"to study",
     note:"A “prior knowledge” module is not validated: only its quiz (≥ 75%) validates it. The test has one question per module, so it is an indicator, not an assessment.",
     see:"See my path", q:(i,n)=>`question ${i} of ${n}`, dk:"I don’t know", next:"Next question", skip:"Skip the test"},
-  d:{h1:"My path", lv:["Discovery","In progress","Operational","Expert"], valid:"modules validated", level:"level reached",
+  d:{h1:"My path", lv:["Discovery","In progress","Operational","Path completed"], lvExam:"Exam passed", valid:"modules validated", level:"level reached",
     toReview:n=>`question${n>1?"s":""} to review`, delivs:"portfolio deliverables", next:"Next step", resume:"Resume", start:"Start",
-    done:"Path completed", doneSub:"Practise with the assessment tool and review your mistakes before an interview.",
+    done:"Path completed", doneSub:"Every module is passed: the final exam is open. Pass it to get your statement of achievement and competency transcript.",
     passed:p=>`passed ${p}%`, acq:"prior knowledge", best:p=>`best score ${p}%`, dvDone:"deliverable done", review:"Revisit", open:"Open", locked:"locked",
     sources:'Main sources: Regulation (EU) 2024/1689 as amended by Regulation (EU) 2026/1744, on <a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj" target="_blank" rel="noopener">EUR-Lex</a>; the Commission’s <a href="https://ai-act-service-desk.ec.europa.eu/en" target="_blank" rel="noopener">AI Act Service Desk</a>; <a href="https://artificialintelligenceact.eu/" target="_blank" rel="noopener">artificialintelligenceact.eu</a> (unofficial).'},
   m:{back:"← My path", module:"Module", acq:"prior knowledge", quizDirect:"Validate directly with the quiz", deep:"In-depth (compliance lead)",
     showDeep:n=>`Show in-depth content (${n})`, key:"Key takeaways", deliv:"Portfolio deliverable", dvResume:p=>`Resume in the assistant · ${p}%`, dvStart:"Write it with the assistant",
-    dvHint:"Guided template, autosave, Markdown export", dvDone:"I have produced this deliverable", quiz:"Validation quiz", quizSub:(n,p)=>`${n} questions · pass mark ${p}%`, take:"Take the quiz"},
+    dvHint:"Guided template, autosave, Markdown export", dvDone:"I have produced this deliverable", comp:"Competencies assessed in the final exam", compSub:"The module quiz checks the basics; the final exam assesses each of these competencies through case studies.", quiz:"Validation quiz", quizSub:(n,p)=>`${n} questions · pass mark ${p}%`, take:"Take the quiz"},
   q:{revision:"Review", q:(i,n)=>`question ${i} of ${n}`, validate:"Check", ok:"Correct.", ko:"Not quite.", added:" This question has been added to your review queue.",
     next:"Next question", result:"See the result", revDone:"Review complete", left:n=>`${n} question(s) left to review.`, empty:"Your review queue is empty.",
     myPath:"My path", passed:"· module passed", failed:"· pass mark not reached", unlocked:t=>`The module “${t}” is now unlocked.`, last:"You have passed the last module of the path.",
@@ -1238,13 +2233,54 @@ const I18N = {
     impOk:"Progress imported.", impKo:"Invalid code: paste the full text copied from “Export”.", reset:"Start over", resetSub:"Clears the profile, the placement test and all progress.",
     resetBtn:"Reset everything", confirm:"Confirm the reset"},
   copy:{ok:"Copied.", sel:"Text selected: copy it with Ctrl+C."},
+  ex:{eyebrow:"Final exam", h1:"AI Act knowledge exam",
+    lede:"A certification-level test: case studies, multiple-answer questions, no feedback during the test, a time limit and an 80% pass mark. It opens once every module of your path is passed.",
+    kQ:"questions", kT:"duration", kP:"pass mark", kC:"competencies assessed", rules:"Exam rules",
+    rulesList:(n,min,p,d,per)=>[`${n} questions, ${per===2?"two":"one"} per competency assessed, in random order.`,`Duration: ${min} minutes. When time runs out, your answers are submitted automatically, even if you left the page.`,`Multiple-answer questions: tick all the correct answers and no wrong one. Scoring is all-or-nothing.`,`No feedback during the test. You can move between questions and flag some to come back to.`,`Pass mark: ${p}%. “With distinction” from ${d}%.`,per===2?`Each attempt shuffles the order of questions and answers. Detailed feedback is shown after you submit.`:`Each attempt draws new question variants and shuffles the answers. Detailed feedback is shown after you submit.`,`These pass marks and durations are settings of this tool, not those of an official certification.`],
+    locked:(a,b)=>`Exam locked: first pass every module of your path (${a} of ${b} passed). A “prior knowledge” module must also be passed through its quiz.`,
+    lockedShort:(a,b)=>`locked · ${a}/${b} modules`, inProgress:"test in progress",
+    start:"Start the exam", resume:"Resume the test in progress", open:"Prepare for the exam", see:"See the conditions",
+    single:"One answer", multi:"Several answers · all-or-nothing", flagged:"flagged",
+    q:(i,n)=>`question ${i} of ${n}`, prev:"‹ Previous", next:"Next ›", flag:"Flag for review", unflag:"Remove flag",
+    answered:(a,n)=>`${a} of ${n} answered`, submit:"Submit my answers",
+    confirm:n=>n?`${n} question${n>1?"s":""} unanswered. Submit anyway? This cannot be undone.`:"Submit your answers for good?",
+    confirmYes:"Yes, submit", cancel:"Keep going", timeLeft:"Time left",
+    timeUp:"Time is up: your answers were submitted automatically.", nav:"Questions", legend:"Blue: answered · orange dot: flagged.",
+    resEyebrow:"Exam result", passed:"exam passed", passedDist:"passed with distinction", failed:"pass mark not reached",
+    resLede:(s,n,p)=>`${s} correct answers out of ${n} (pass mark ${p}%).`, passNext:"Your statement of achievement is available in the transcript.", failNext:"Reread the modules whose competencies are “to consolidate”, then retake the exam.",
+    byMod:"Result by module", byConcept:"Competencies assessed",
+    st:{ok:"Acquired",part:"Partial",ko:"To consolidate",quiz:"Passed in quiz",none:"Not studied"},
+    correction:"Feedback on missed questions", yourAns:"Your answer", goodAns:"Correct answer", noAns:"no answer",
+    toReport:"See my transcript and statement", retry:"Retake the exam", back:"My path",
+    attempts:n=>`${n} attempt${n>1?"s":""}`, dashTitle:"AI Act knowledge exam", dashSub:(n,m,p)=>`${n} questions · ${m} min · pass mark ${p}% · statement of achievement and competency transcript`, best:p=>`best result ${p}%`},
+  rp:{eyebrow:"Competency transcript", h1:"My transcript and statement of achievement", file:"ai-act-transcript",
+    lede:"This document sums up your modules, your final exam result and the status of each competency. The statement of achievement is added as the first page once you pass the exam.",
+    name:"Full name to display", namePh:"Your name", nameHint:"Stored in this browser only. It is neither verified nor sent anywhere.",
+    print:"Print or save as PDF", dl:"Download (.html)", md:"Copy as Markdown", copied:"Copied.",
+    iframe:"Printing and downloading are available when the file is opened directly in the browser.",
+    noExam:"Statement not available: pass every module, then pass the final exam. The transcript below shows your current progress.",
+    noExamReady:"Statement not available: all your modules are passed; you still need to pass the final exam (80%).",
+    cKicker:"AI Act Pathway · final exam", cTitle:"Statement of achievement", cIntro:"This statement is awarded to",
+    cBody:prof=>`for passing the final knowledge exam of the “${prof}” path, on the European regulation on artificial intelligence (Regulation (EU) 2024/1689, as amended by Regulation (EU) 2026/1744).`,
+    cScore:"result", cDate:"exam date", cRef:"Reference", cMention:{dist:"With distinction",pass:"Passed"},
+    cConcepts:(a,n)=>`${a} of ${n} competenc${n>1?"ies":"y"} acquired`,
+    cSign:"Jean-Pierre LAI-CHEONG", cSignSub:"Creator of AI Act Pathway",
+    cDisc:"Document generated automatically by AI Act Pathway, an awareness tool, after an unsupervised online exam. It is not an official certification: it is not recognised or accredited by any authority or certification body, does not verify the holder’s identity or the exam conditions, and is not legal advice. The reference is computed locally and cannot be verified by a third party.",
+    tTitle:"Competency transcript", tHolder:"Holder", tProfile:"Path", tIssued:"issued on", tLaw:"Law as of",
+    tLawV:"21 October 2026 · Reg. (EU) 2024/1689 as amended by Reg. (EU) 2026/1744", tVer:"Content version",
+    tExam:"Final exam", tExamNone:"Not taken", tExamV:(pct,s,n,d,att,m)=>`${pct}% (${s}/${n}) · ${m} · ${d} · ${att}`,
+    tMods:"Path modules", tMod:"Module", tQuiz:"Quiz (best)", tExamCol:"Exam", tStatus:"Status", tCompetence:"Competency",
+    modSt:{ok:"Passed",acq:"Prior knowledge",todo:"Not passed"}, tConcepts:"Competencies",
+    tLegend:"Acquired: all exam questions for the competency answered correctly. Partial: only some. To consolidate: none. Passed in quiz: module passed, competency not yet assessed in the exam. Not studied: module not passed.",
+    tMethod:(n,p)=>`Method: ${n}-question exam drawn from a bank of case studies, ${p}% pass mark, multiple-answer questions scored all-or-nothing. Results of the best passed attempt, or else of the best attempt.`,
+    tToWork:"Areas to improve", tNoWork:"None: all assessed competencies are acquired.", delivs:"Portfolio deliverables marked as produced"},
   tip:{art:"Article", par:"Paragraph", gdpr:"GDPR · ", src:"Regulation (EU) 2024/1689 as amended", srcG:"Regulation (EU) 2016/679 (GDPR)", read:"Read the official text →", foot:"Educational summary, unofficial", verify:"to be verified", aria:"show the article summary"},
  }
 };
 
 /* ===================== ÉTAT ===================== */
 const KEY = "aiact-parcours-v1";
-const fresh = () => ({profile:null, placed:false, acquired:[], mods:{}, review:[], delivs:{}, drafts:{}, lang:null});
+const fresh = () => ({profile:null, placed:false, acquired:[], mods:{}, review:[], delivs:{}, drafts:{}, lang:null, exam:{attempts:[]}, run:null, last:null, learner:""});
 let S = fresh();
 try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch(e) {}
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} renderTabs(); }
@@ -1255,7 +2291,7 @@ function applyLang(lang){
   const prevName=TNAME;
   S.lang = (lang==="en") ? "en" : "fr";
   L = I18N[S.lang];
-  ({MODULES, PLACEMENT, PROFILES, ART, RGPD, ART_URL, RGPD_URL, DELIV, BANNED, ANNEX3, TRANS, TNAME, DOC_FOOT} = CONTENT[S.lang]);
+  ({MODULES, PLACEMENT, PROFILES, ART, RGPD, ART_URL, RGPD_URL, DELIV, BANNED, ANNEX3, TRANS, TNAME, DOC_FOOT, CONCEPTS, EXAM} = CONTENT[S.lang]);
   if(!T.name || T.name===prevName) T.name=TNAME;
   document.documentElement.lang = L.htmlLang;
   document.title = L.brand;
@@ -1299,17 +2335,19 @@ function renderFoot(){
 /* ===================== NAV ===================== */
 let view = {name:"home"};
 const app = document.getElementById("app");
-function go(v){ if(typeof hideTip==="function") hideTip(true); view=v; render(); window.scrollTo({top:0}); }
+function go(v){ if(typeof hideTip==="function") hideTip(true); if(exTimer){ clearInterval(exTimer); exTimer=null; } view=v; render(); window.scrollTo({top:0}); }
 function renderTabs(){
   const t=document.getElementById("tabs");
   if(!S.profile||!S.placed){ t.innerHTML=""; return; }
-  t.innerHTML=["dash","review","tool","settings"].map(k=>`<button data-go="${k}" aria-current="${view.name===k||(k==="dash"&&["module","quiz","deliv"].includes(view.name))}">${L.tabs[k]}${k==="review"&&S.review.length?`<span class="count">${S.review.length}</span>`:""}</button>`).join("");
+  t.innerHTML=["dash","review","tool","report","settings"].map(k=>`<button data-go="${k}" aria-current="${view.name===k||(k==="dash"&&["module","quiz","deliv","examIntro","exam","examResult"].includes(view.name))}">${L.tabs[k]}${k==="review"&&S.review.length?`<span class="count">${S.review.length}</span>`:""}</button>`).join("");
   t.querySelectorAll("button").forEach(b=>b.onclick=()=>go({name:b.dataset.go}));
 }
 function render(){
   if(!S.profile) return renderWelcome();
   if(!S.placed) return renderPlacement();
-  ({dash:renderDash, home:renderDash, module:renderModule, quiz:renderQuiz, review:renderReview, tool:renderTool, settings:renderSettings, deliv:renderDeliv}[view.name]||renderDash)();
+  if(S.run && Date.now()>=S.run.end && view.name!=="exam") finishExam(true);
+  ({dash:renderDash, home:renderDash, module:renderModule, quiz:renderQuiz, review:renderReview, tool:renderTool, settings:renderSettings, deliv:renderDeliv,
+    examIntro:renderExamIntro, exam:renderExam, examResult:renderExamResult, report:renderReport}[view.name]||renderDash)();
   renderTabs();
 }
 
@@ -1381,7 +2419,7 @@ function renderPlacement(){
 function renderDash(){
   const p=path(), done=p.filter(passed).length, cur=currentId(), D=L.d;
   const pct=Math.round(done/p.length*100);
-  const level = D.lv[pct>=100?3:pct>=50?2:pct>0?1:0];
+  const level = (bestAttempt()&&attempts().some(a=>a.passed)) ? D.lvExam : D.lv[pct>=100?3:pct>=50?2:pct>0?1:0];
   const delivTotal = S.profile==="resp"? p.length:0, delivDone=p.filter(id=>S.delivs[id]).length;
   app.innerHTML=`<div class="stack-lg">
    <div class="stack"><p class="eyebrow">${PROFILES[S.profile].label}</p><h1>${D.h1}</h1></div>
@@ -1391,16 +2429,18 @@ function renderDash(){
      <div class="kpi"><b>${S.review.length}</b><span>${D.toReview(S.review.length)}</span></div>
      ${S.profile==="resp"?`<div class="kpi"><b>${delivDone}/${delivTotal}</b><span>${D.delivs}</span></div>`:""}
    </div>
-   ${cur?`<div class="panel row" style="justify-content:space-between"><div><p class="eyebrow">${D.next}</p><h3>${modById(cur).title}</h3></div><button class="btn" data-open="${cur}">${S.mods[cur]?.read?D.resume:D.start}</button></div>`:`<div class="panel"><h3>${D.done}</h3><p class="lede">${D.doneSub}</p></div>`}
+   ${cur?`<div class="panel row" style="justify-content:space-between"><div><p class="eyebrow">${D.next}</p><h3>${modById(cur).title}</h3></div><button class="btn" data-open="${cur}">${S.mods[cur]?.read?D.resume:D.start}</button></div>`:`<div class="stack" style="gap:12px"><p class="lede" style="max-width:none"><b style="color:var(--ink)">${D.done}.</b> ${D.doneSub}</p>${examPanel()}</div>`}
    <div class="path">${p.map((id,i)=>{const m=modById(id),ok=passed(id),un=unlocked(id),acq=S.acquired.includes(id),best=S.mods[id]?.best;
      const cls=ok?"passed":id===cur?"current":!un?"locked":"";
      return `<div class="step ${cls}"><span class="num">${ok?"✓":i+1}</span>
        <div><h3>${m.title}</h3><p>${m.goal}</p>
        <div class="row" style="gap:6px;margin-top:4px"><span class="chip">${m.dur}</span>${ok?`<span class="chip ok">${D.passed(best)}</span>`:""}${acq&&!ok?`<span class="chip acq">${D.acq}</span>`:""}${best!=null&&!ok?`<span class="chip">${D.best(best)}</span>`:""}${S.profile==="resp"&&S.delivs[id]?`<span class="chip ok">${D.dvDone}</span>`:""}</div></div>
        <div class="act">${un?`<button class="btn ${id===cur?"":"ghost"}" data-open="${id}">${ok?D.review:D.open}</button>`:`<span class="chip">${D.locked}</span>`}</div></div>`}).join("")}</div>
+   ${cur?examPanel():""}
    <p class="sources">${D.sources}</p>
   </div>`;
   app.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>go({name:"module",id:b.dataset.open}));
+  app.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>go({name:b.dataset.x}));
 }
 
 /* ===================== MODULE ===================== */
@@ -1416,6 +2456,7 @@ function renderModule(){
      <p class="eyebrow">${M.module} ${i+1} · ${m.dur}${acq?" · "+M.acq:""}</p>
      <h1>${m.title}</h1><p class="lede">${m.goal}</p>
      ${acq?`<div class="row"><button class="btn ghost" id="skipq">${M.quizDirect}</button></div>`:""}</div>
+   ${(()=>{ const cs=CONCEPTS.filter(c=>modOfConcept(c.id)===m.id && c.lvl<=lvlMax()); return cs.length?`<div class="keypts"><p class="eyebrow">${M.comp}</p><ul>${cs.map(c=>`<li>${c.l}</li>`).join("")}</ul><p class="hint" style="margin-top:8px">${M.compSub}</p></div>`:""; })()}
    ${m.lessons.filter(l=>l.lvl!==2||showDeep).map(l=>`<section class="lesson ${l.lvl===2?"deep":""}">${l.lvl===2?`<span class="tag">${M.deep}</span>`:""}<h2>${l.h}</h2>${l.body}</section>`).join("")}
    ${!showDeep&&hidden?`<div><button class="btn quiet" id="deep">${M.showDeep(hidden)}</button></div>`:""}
    <div class="keypts"><p class="eyebrow">${M.key}</p><ul>${m.keypts.map(k=>`<li>${k}</li>`).join("")}</ul></div>
