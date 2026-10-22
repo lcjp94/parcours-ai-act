@@ -1998,7 +1998,7 @@ function reportHTML(d){
     <p class="rp-h3">${R.tToWork}</p>
     ${work.length?`<ul class="rp-work">${work.map(x=>`<li>${esc(x.c.l)} <span style="color:#6e6e73">(${esc(modById(modOfConcept(x.c.id)).title)})</span></li>`).join("")}</ul>`:`<p style="margin:0">${R.tNoWork}</p>`}
     ${delivs.length?`<p class="rp-h3">${R.delivs}</p><p style="margin:0">${delivs.join(" · ")}</p>`:""}
-    <p class="rp-note" style="margin-top:18px">${R.tMethod(a?a.n:examSize(),EXAM_PASS*100)} ${R.tVer} : ${CONTENT_VER}.</p>
+    <p class="rp-note" style="margin-top:18px">${R.tMethod(a?a.n:examSize(),EXAM_PASS*100)} ${R.tVer}${S.lang==="fr"?" : ":": "}${CONTENT_VER}.</p>
     <p class="rp-note">${R.cDisc}</p>
   </section>`;
   return cert+transcript;
@@ -2026,19 +2026,17 @@ function renderReport(){
      <label class="stack" style="gap:6px"><b>${R.name}</b><input class="field" id="rp-name" value="${esc(S.learner||"")}" placeholder="${esc(R.namePh)}" maxlength="80" autocomplete="name"></label>
      <span class="hint">${R.nameHint}</span>
      ${d.passAtt?"":`<div class="notice">${examReady()?R.noExamReady:R.noExam}</div>`}
-     <div class="row">${top?`<button class="btn" id="rp-print">${R.print}</button><button class="btn ghost" id="rp-dl">${R.dl}</button>`:""}<button class="btn ghost" id="rp-md">${R.md}</button>
+     <div class="row"><button class="btn" id="rp-pdf">${R.pdf}</button>${top&&!isIOS()?`<button class="btn ghost" id="rp-print">${R.print}</button>`:""}<button class="btn ghost" id="rp-md">${R.md}</button>
        ${!d.passAtt&&examReady()?`<button class="btn quiet" id="rp-exam">${L.ex.start}</button>`:""}<span class="hint" id="rp-msg"></span></div>
-     ${top?"":`<p class="hint">${R.iframe}</p>`}
+     <p class="hint">${R.pdfHint}</p>
    </div>
    <div id="rp-doc">${reportHTML(d)}</div>
   </div>`;
   const nm=document.getElementById("rp-name"); let t=null;
   nm.oninput=()=>{ S.learner=nm.value; clearTimeout(t); t=setTimeout(()=>{ save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); },300); };
   const p=document.getElementById("rp-print"); if(p) p.onclick=()=>{ S.learner=nm.value; save(); document.getElementById("rp-doc").innerHTML=reportHTML(reportData()); window.print(); };
-  const dl=document.getElementById("rp-dl"); if(dl) dl.onclick=()=>{ S.learner=nm.value; save(); const dd=reportData(), aEl=document.createElement("a");
-    aEl.href=URL.createObjectURL(new Blob([reportFile(dd)],{type:"text/html"}));
-    aEl.download=`${R.file}-${(dd.name||"ai-act").toLowerCase().normalize("NFD").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.html`;
-    document.body.appendChild(aEl); aEl.click(); setTimeout(()=>{ URL.revokeObjectURL(aEl.href); aEl.remove(); },500); };
+  document.getElementById("rp-pdf").onclick=()=>{ S.learner=nm.value; save(); const msg=document.getElementById("rp-msg");
+    try{ savePDF(reportData(), msg); }catch(e){ msg.textContent=R.pdfErr; } };
   document.getElementById("rp-md").onclick=()=>{ const md=reportMarkdown(reportData()), msg=document.getElementById("rp-msg");
     const show=()=>{ msg.innerHTML=`<textarea readonly id="rp-mdbox" style="min-height:200px;margin-top:8px">${esc(md)}</textarea>`; const b=document.getElementById("rp-mdbox"); b.focus(); b.select(); };
     try{ navigator.clipboard.writeText(md).then(()=>msg.textContent=R.copied, show); }catch(e){ show(); } };
@@ -2056,6 +2054,205 @@ function examPanel(){
     <div class="row">${S.run?`<button class="btn" data-x="exam">${X.resume}</button>`:`<button class="btn ${ready?"":"ghost"}" data-x="examIntro">${ready?X.open:X.see}</button>`}
       <button class="btn quiet" data-x="report">${L.tabs.report}</button></div>
   </div>`;
+}
+
+/* ===================== EXPORT PDF DU RELEVÉ =====================
+   Générateur PDF vectoriel minimal, sans bibliothèque : polices standard PDF
+   (Helvetica, Times) en WinAnsiEncoding. Les largeurs de texte sont mesurées
+   avec Arial / Times New Roman, dont les métriques sont compatibles.
+   Fonctionne hors ligne, y compris sur iPhone où window.print() n'est pas fiable. */
+const PDF_W = 595.28, PDF_H = 841.89;
+const PDF_FONTS = {R:"Helvetica", B:"Helvetica-Bold", T:"Times-Roman", I:"Times-Italic"};
+const PDF_CSSF = {R:'Helvetica, Arial, "Liberation Sans", sans-serif', B:'bold 100px Helvetica, Arial, "Liberation Sans", sans-serif', T:'"Times New Roman", Times, "Liberation Serif", serif', I:'italic 100px "Times New Roman", Times, "Liberation Serif", serif'};
+const WINANSI = {"€":0x80,"‚":0x82,"ƒ":0x83,"„":0x84,"…":0x85,"†":0x86,"‡":0x87,"ˆ":0x88,"‰":0x89,"Š":0x8A,"‹":0x8B,"Œ":0x8C,"Ž":0x8E,"‘":0x91,"’":0x92,"“":0x93,"”":0x94,"•":0x95,"–":0x96,"—":0x97,"˜":0x98,"™":0x99,"š":0x9A,"›":0x9B,"œ":0x9C,"ž":0x9E,"Ÿ":0x9F};
+const PDF_SUBST = {"\u202F":"\u00A0","\u2009":" ","\u2011":"-","≥":">=","≤":"<=","→":"->","←":"<-","✓":"v","×":"\u00D7"};
+let pdfCtx=null; const pdfWCache={};
+function pdfEnc(s){
+  let o=""; for(const ch of String(s)){ const c=PDF_SUBST[ch]!==undefined?PDF_SUBST[ch]:ch;
+    for(const k of c){ const code=k.codePointAt(0);
+      if(WINANSI[k]) o+=String.fromCharCode(WINANSI[k]);
+      else if(code<0x80 || (code>=0xA0 && code<=0xFF)) o+=k;
+      else o+="?"; } }
+  return o;
+}
+const pdfEsc = s => pdfEnc(s).replace(/\\/g,"\\\\").replace(/\(/g,"\\(").replace(/\)/g,"\\)").replace(/[\r\n]/g," ");
+function pdfWidth(s, f, size, tc){
+  s=String(s);
+  if(!pdfCtx){ try{ pdfCtx=document.createElement("canvas").getContext("2d"); }catch(e){ pdfCtx=null; } }
+  const key=f+"|"+s; let w=pdfWCache[key];
+  if(w===undefined){
+    if(pdfCtx){ const css=PDF_CSSF[f]; pdfCtx.font = css.includes("100px") ? css : "100px "+css; w=pdfCtx.measureText(s).width/100; }
+    else w=s.length*0.5;
+    pdfWCache[key]=w;
+  }
+  return w*size + (tc||0)*[...s].length;
+}
+function pdfWrap(s, f, size, maxW){
+  const words=String(s).split(/\s+/).filter(Boolean), lines=[]; let cur="";
+  words.forEach(w=>{ const t=cur?cur+" "+w:w; if(pdfWidth(t,f,size)<=maxW || !cur) cur=t; else { lines.push(cur); cur=w; } });
+  if(cur) lines.push(cur); return lines.length?lines:[""];
+}
+const hex2rgb = h => { h=h.replace("#",""); return [0,2,4].map(i=>(parseInt(h.slice(i,i+2),16)/255).toFixed(3)).join(" "); };
+
+class PdfDoc{
+  constructor(){ this.pages=[]; this.newPage(); }
+  newPage(){ this.cur={ops:[],links:[]}; this.pages.push(this.cur); return this; }
+  op(s){ this.cur.ops.push(s); }
+  text(x,y,s,o={}){
+    const f=o.f||"R", size=o.size||10, tc=o.tc||0; let w=pdfWidth(s,f,size,tc);
+    if(o.align==="center") x-=w/2; else if(o.align==="right") x-=w;
+    this.op(`BT /${f} ${size} Tf ${hex2rgb(o.color||"#1d1d1f")} rg ${tc?tc+" Tc ":""}${x.toFixed(2)} ${y.toFixed(2)} Td (${pdfEsc(s)}) Tj${tc?" 0 Tc":""} ET`);
+    return w;
+  }
+  para(x,y,s,maxW,o={}){
+    const lh=o.lh||(o.size||10)*1.35, lines=pdfWrap(s,o.f||"R",o.size||10,maxW);
+    lines.forEach((l,i)=>this.text(o.align==="center"?x+maxW/2:x, y-i*lh, l, o));
+    return lines.length*lh;
+  }
+  line(x1,y1,x2,y2,color,w){ this.op(`${hex2rgb(color)} RG ${w||0.6} w ${x1.toFixed(2)} ${y1.toFixed(2)} m ${x2.toFixed(2)} ${y2.toFixed(2)} l S`); }
+  rrect(x,y,w,h,r,o={}){
+    const k=0.5523*r, p=[`${(x+r).toFixed(2)} ${y.toFixed(2)} m`,`${(x+w-r).toFixed(2)} ${y.toFixed(2)} l`,`${(x+w-r+k).toFixed(2)} ${y.toFixed(2)} ${(x+w).toFixed(2)} ${(y+r-k).toFixed(2)} ${(x+w).toFixed(2)} ${(y+r).toFixed(2)} c`,
+      `${(x+w).toFixed(2)} ${(y+h-r).toFixed(2)} l`,`${(x+w).toFixed(2)} ${(y+h-r+k).toFixed(2)} ${(x+w-r+k).toFixed(2)} ${(y+h).toFixed(2)} ${(x+w-r).toFixed(2)} ${(y+h).toFixed(2)} c`,
+      `${(x+r).toFixed(2)} ${(y+h).toFixed(2)} l`,`${(x+r-k).toFixed(2)} ${(y+h).toFixed(2)} ${x.toFixed(2)} ${(y+h-r+k).toFixed(2)} ${x.toFixed(2)} ${(y+h-r).toFixed(2)} c`,
+      `${x.toFixed(2)} ${(y+r).toFixed(2)} l`,`${x.toFixed(2)} ${(y+r-k).toFixed(2)} ${(x+r-k).toFixed(2)} ${y.toFixed(2)} ${(x+r).toFixed(2)} ${y.toFixed(2)} c h`].join(" ");
+    const paint = o.fill&&o.stroke?"B":o.fill?"f":"S";
+    this.op(`${o.fill?hex2rgb(o.fill)+" rg ":""}${o.stroke?hex2rgb(o.stroke)+" RG "+(o.w||0.6)+" w ":""}${p} ${paint}`);
+  }
+  circle(cx,cy,r,color,w){ this.rrect(cx-r,cy-r,2*r,2*r,r,{stroke:color,w}); }
+  arcText(cx,cy,r,s,o={}){
+    const f=o.f||"B", size=o.size||7, tc=o.tc||0; let a=o.start!==undefined?o.start:Math.PI;
+    for(const ch of s){ const cw=pdfWidth(ch,f,size)+tc, mid=a-(cw/2)/r, phi=mid-Math.PI/2;
+      const c=Math.cos(phi), sn=Math.sin(phi), px=cx+r*Math.cos(mid)-c*cw/2+tc/2*c, py=cy+r*Math.sin(mid)-sn*cw/2+tc/2*sn;
+      this.op(`BT /${f} ${size} Tf ${hex2rgb(o.color||"#8a6d2b")} rg ${c.toFixed(4)} ${sn.toFixed(4)} ${(-sn).toFixed(4)} ${c.toFixed(4)} ${px.toFixed(2)} ${py.toFixed(2)} Tm (${pdfEsc(ch)}) Tj ET`);
+      a-=cw/r; }
+  }
+  link(x,y,w,h,url){ this.cur.links.push({x,y,w,h,url}); }
+  output(meta){
+    const objs=[]; const add=s=>{ objs.push(s); return objs.length; };
+    const fontIds={}; Object.entries(PDF_FONTS).forEach(([k,n])=>{ fontIds[k]=add(`<< /Type /Font /Subtype /Type1 /BaseFont /${n} /Encoding /WinAnsiEncoding >>`); });
+    const fontRes=Object.entries(fontIds).map(([k,id])=>`/${k} ${id} 0 R`).join(" ");
+    const pagesId=objs.length+1+this.pages.length*0; // réservé plus bas
+    const pageIds=[], kids=[];
+    const pagesPlaceholder=add("PAGES");
+    this.pages.forEach(pg=>{
+      const stream=pg.ops.join("\n");
+      const cId=add(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+      const annots=pg.links.map(l=>add(`<< /Type /Annot /Subtype /Link /Rect [${l.x.toFixed(2)} ${l.y.toFixed(2)} ${(l.x+l.w).toFixed(2)} ${(l.y+l.h).toFixed(2)}] /Border [0 0 0] /A << /S /URI /URI (${pdfEsc(l.url)}) >> >>`));
+      const pId=add(`<< /Type /Page /Parent ${pagesPlaceholder} 0 R /MediaBox [0 0 ${PDF_W} ${PDF_H}] /Resources << /Font << ${fontRes} >> >> /Contents ${cId} 0 R${annots.length?` /Annots [${annots.map(a=>a+" 0 R").join(" ")}]`:""} >>`);
+      kids.push(`${pId} 0 R`); pageIds.push(pId);
+    });
+    objs[pagesPlaceholder-1]=`<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${kids.length} >>`;
+    const u16=s=>{ let h="FEFF"; for(const ch of String(s)){ const c=ch.codePointAt(0); if(c>0xFFFF){ const v=c-0x10000; h+=(0xD800+(v>>10)).toString(16).padStart(4,"0")+(0xDC00+(v&0x3FF)).toString(16).padStart(4,"0"); } else h+=c.toString(16).padStart(4,"0"); } return `<${h.toUpperCase()}>`; };
+    const d=new Date(), pad=n=>String(n).padStart(2,"0");
+    const info=add(`<< /Title ${u16(meta.title)} /Author ${u16(meta.author)} /Creator ${u16(meta.creator)} /Producer ${u16(meta.creator)} /CreationDate (D:${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}) >>`);
+    const cat=add(`<< /Type /Catalog /Pages ${pagesPlaceholder} 0 R /Lang ${u16(meta.lang)} >>`);
+    let out="%PDF-1.4\n%\u00E2\u00E3\u00CF\u00D3\n"; const off=[];
+    objs.forEach((o,i)=>{ off.push(out.length); out+=`${i+1} 0 obj\n${o}\nendobj\n`; });
+    const xref=out.length;
+    out+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n`+off.map(n=>String(n).padStart(10,"0")+" 00000 n \n").join("");
+    out+=`trailer\n<< /Size ${objs.length+1} /Root ${cat} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+    const bytes=new Uint8Array(out.length); for(let i=0;i<out.length;i++) bytes[i]=out.charCodeAt(i)&0xFF;
+    return bytes;
+  }
+}
+
+/* ---------- Mise en page de l'attestation et du relevé ---------- */
+function reportPDF(d){
+  const R=L.rp, X=L.ex, prof=PROFILES[S.profile].label, a=d.att, acq=d.cs.filter(x=>x.st==="ok").length;
+  const GOLD="#8a6d2b", GOLD_L="#c8b27a", GOLD_XL="#e9dfc4", INK="#1d1d1f", MUT="#6e6e73", LINE="#d2d2d7", BLUE="#0066cc";
+  const ST={ok:["#e9f6ec","#1d6b31"],part:["#fff3d6","#7a5200"],ko:["#fdecee","#b0001a"],quiz:["#e8f1fc","#0058b0"],none:["#f0f0f3","#6e6e73"]};
+  const doc=new PdfDoc(); const M=48, CW=PDF_W-2*M;
+  const pill=(x,y,label,kind)=>{ const [bg,fg]=ST[kind], w=pdfWidth(label,"B",7.5)+12; doc.rrect(x,y-3.2,w,12,6,{fill:bg}); doc.text(x+6,y,label,{f:"B",size:7.5,color:fg}); return w; };
+
+  /* Page 1 : attestation (si examen réussi) */
+  if(d.passAtt){
+    const p=d.passAtt, cx=PDF_W/2;
+    doc.rrect(30,30,PDF_W-60,PDF_H-60,12,{stroke:GOLD_L,w:1});
+    doc.rrect(36,36,PDF_W-72,PDF_H-72,9,{stroke:GOLD_XL,w:0.8});
+    let y=PDF_H-150;
+    doc.text(cx,y,R.cKicker.toUpperCase(),{f:"B",size:8.5,color:GOLD,align:"center",tc:1.6});
+    y-=52; doc.text(cx,y,R.cTitle,{f:"T",size:36,align:"center"});
+    y-=40; doc.text(cx,y,R.cIntro,{size:11,color:MUT,align:"center"});
+    y-=40; doc.text(cx,y,d.name||R.namePh,{f:"I",size:30,align:"center",color:d.name?INK:"#a1a1a6"});
+    y-=14; doc.line(cx-190,y,cx+190,y,LINE,0.8);
+    y-=30; y-=doc.para(cx-215,y,R.cBody(prof),430,{size:11.5,align:"center",lh:16});
+    y-=14; const mt=(p.dist?R.cMention.dist:R.cMention.pass).toUpperCase(), mw=pdfWidth(mt,"B",8.5,1)+28;
+    doc.rrect(cx-mw/2,y-8,mw,24,12,{stroke:GOLD_L,w:0.9}); doc.text(cx,y,mt,{f:"B",size:8.5,color:GOLD,align:"center",tc:1});
+    y-=58; const cols=[[`${p.pct} %`,R.cScore],[fmtDate(p.ts),R.cDate],[d.ref,R.cRef]];
+    cols.forEach(([v,l],i)=>{ const x=cx+(i-1)*150; doc.text(x,y,v,{f:"B",size:13,align:"center"}); doc.text(x,y-16,l.toUpperCase(),{size:7.5,color:MUT,align:"center",tc:0.8}); });
+    y-=48; doc.text(cx,y,R.cConcepts(acq,d.cs.length),{size:10,color:MUT,align:"center"});
+    /* signature et sceau */
+    const sy=210; doc.text(70,sy,R.cSign,{f:"B",size:11}); doc.text(70,sy-15,R.cSignSub,{size:9.5,color:MUT});
+    const li="linkedin.com/in/jeanpierrelaicheong", lw=doc.text(70,sy-31,li,{size:9.5,color:BLUE}); doc.link(70,sy-34,lw,13,"https://www.linkedin.com/in/jeanpierrelaicheong");
+    const scx=PDF_W-110, scy=sy-12; doc.circle(scx,scy,40,GOLD_L,1.1); doc.circle(scx,scy,24,GOLD_L,0.8);
+    doc.arcText(scx,scy,30.5,`${L.brand.toUpperCase()} · 2024/1689 · 2026/1744 · `,{size:6.2,tc:0.9,start:Math.PI*0.97});
+    doc.text(scx,scy-1,"AI",{f:"T",size:15,color:GOLD,align:"center"}); doc.text(scx,scy-11,"ACT",{f:"B",size:6,color:GOLD,align:"center",tc:1});
+    doc.para(M+30,120,R.cDisc,CW-60,{size:7.5,color:MUT,align:"center",lh:10.5});
+    doc.newPage();
+  }
+
+  /* Pages suivantes : relevé */
+  const tFirst=doc.pages.length-1; let y=PDF_H-M;
+  const ensure=(h,redraw)=>{ if(y-h<M+30){ doc.newPage(); y=PDF_H-M; if(redraw) redraw(); } };
+  doc.text(M,y-8,L.brand.toUpperCase(),{f:"B",size:8,color:GOLD,tc:1.2});
+  doc.text(M,y-30,R.tTitle,{f:"B",size:20});
+  doc.text(PDF_W-M,y-8,`${R.cRef} ${d.ref}`,{size:8,color:MUT,align:"right"});
+  doc.text(PDF_W-M,y-20,`${R.tIssued} ${fmtDate(Date.now())}`,{size:8,color:MUT,align:"right"});
+  y-=44; doc.line(M,y,PDF_W-M,y,LINE,0.8); y-=20;
+  const ids=[[R.tHolder,d.name||"—"],[R.tProfile,prof],[R.tExam,a?R.tExamV(a.pct,a.score,a.n,fmtDate(a.ts),X.attempts(d.n),a.passed?(a.dist?R.cMention.dist:R.cMention.pass):X.failed):R.tExamNone],[R.tLaw,R.tLawV]];
+  for(let r=0;r<2;r++){ let h=0; for(let c=0;c<2;c++){ const [l,v]=ids[r*2+c], x=M+c*(CW/2+6);
+      doc.text(x,y,l.toUpperCase(),{size:7,color:MUT,tc:0.6}); h=Math.max(h,doc.para(x,y-13,v,CW/2-14,{size:10,lh:13})); }
+    y-=h+20; }
+  const sect=t=>{ ensure(40); doc.text(M,y,t.toUpperCase(),{f:"B",size:8.5,tc:0.4}); y-=12; };
+  /* tableau des modules */
+  const mc=[M, M+250, M+330, M+430], thead=(cols,labels)=>{ doc.rrect(M,y-6,CW,18,0,{fill:"#f5f5f7"}); labels.forEach((t,i)=>doc.text(cols[i]+5,y,t.toUpperCase(),{f:"B",size:7,color:MUT,tc:0.4})); y-=20; };
+  sect(R.tMods); thead(mc,[R.tMod,R.tQuiz,R.tExamCol,R.tStatus]);
+  path().forEach(m=>{ const mo=modById(m), s=S.mods[m]||{}, ok=passed(m), ex=a&&a.byM[m], lines=pdfWrap(mo.title,"R",9.5,240);
+    const h=lines.length*12+8; ensure(h,()=>thead(mc,[R.tMod,R.tQuiz,R.tExamCol,R.tStatus]));
+    lines.forEach((l,i)=>doc.text(mc[0]+5,y-i*12,l,{size:9.5}));
+    doc.text(mc[1]+5,y,s.best!=null?s.best+" %":"—",{size:9.5});
+    if(ex){ const p=ex[0]/ex[1]; doc.rrect(mc[2]+5,y-0.5,50,4,2,{fill:"#e8e8ed"}); if(p>0) doc.rrect(mc[2]+5,y-0.5,Math.max(4,50*p),4,2,{fill:"#0071e3"}); doc.text(mc[2]+61,y,`${ex[0]}/${ex[1]}`,{size:9.5}); } else doc.text(mc[2]+5,y,"—",{size:9.5});
+    pill(mc[3]+5,y, ok?R.modSt.ok:S.acquired.includes(m)?R.modSt.acq:R.modSt.todo, ok?"ok":S.acquired.includes(m)?"quiz":"none");
+    y-=h-4; doc.line(M,y+8,PDF_W-M,y+8,"#ececf0",0.5); });
+  y-=14;
+  /* tableau des compétences */
+  const cc=[M, M+410], chead=()=>thead(cc,[R.tCompetence,R.tStatus]);
+  sect(`${R.tConcepts} · ${R.cConcepts(acq,d.cs.length)}`); chead();
+  let lastMod=null;
+  d.cs.forEach(x=>{ const m=modOfConcept(x.c.id);
+    if(m!==lastMod){ ensure(40,chead); doc.rrect(M,y-6,CW,17,0,{fill:"#fafafc"}); doc.text(M+5,y,modById(m).title,{f:"B",size:9}); y-=19; lastMod=m; }
+    const lines=pdfWrap(x.c.l,"R",9,395), h=lines.length*11.5+7; ensure(h,chead);
+    lines.forEach((l,i)=>doc.text(cc[0]+5,y-i*11.5,l,{size:9})); pill(cc[1]+5,y,X.st[x.st],x.st);
+    y-=h-3; doc.line(M,y+7,PDF_W-M,y+7,"#ececf0",0.5); });
+  y-=6; ensure(40); y-=doc.para(M,y,R.tLegend,CW,{size:7.5,color:MUT,lh:10})+10;
+  /* axes de progression */
+  const work=d.cs.filter(x=>["part","ko","none"].includes(x.st));
+  sect(R.tToWork);
+  if(work.length) work.forEach(x=>{ const t=`• ${x.c.l} (${modById(modOfConcept(x.c.id)).title})`, lines=pdfWrap(t,"R",9.5,CW-10); ensure(lines.length*12+4); lines.forEach((l,i)=>doc.text(M+(i?8:0),y-i*12,l,{size:9.5})); y-=lines.length*12+3; });
+  else { doc.text(M,y,R.tNoWork,{size:9.5}); y-=14; }
+  const delivs=S.profile==="resp"?path().filter(m=>S.delivs[m]).map(m=>modById(m).title):[];
+  if(delivs.length){ y-=8; sect(R.delivs); y-=doc.para(M,y,delivs.join(" · "),CW,{size:9.5,lh:12}); }
+  y-=12; const meth=`${R.tMethod(a?a.n:examSize(),EXAM_PASS*100)} ${R.tVer}${S.lang==="fr"?" : ":": "}${CONTENT_VER}.`;
+  ensure(pdfWrap(meth,"R",7.5,CW).length*10+pdfWrap(R.cDisc,"R",7.5,CW).length*10+16);
+  y-=doc.para(M,y,meth,CW,{size:7.5,color:MUT,lh:10})+6; doc.para(M,y,R.cDisc,CW,{size:7.5,color:MUT,lh:10});
+  /* pieds de page du relevé */
+  const tPages=doc.pages.slice(tFirst), tot=tPages.length;
+  tPages.forEach((pg,i)=>{ doc.cur=pg; doc.line(M,M,PDF_W-M,M,"#ececf0",0.5);
+    doc.text(M,M-14,`${R.tTitle} · ${d.name||L.brand}`,{size:7.5,color:MUT}); doc.text(PDF_W-M,M-14,`${i+1} / ${tot}`,{size:7.5,color:MUT,align:"right"}); });
+  return doc.output({title:`${d.passAtt?R.cTitle+" · ":""}${R.tTitle} · ${d.name||L.brand}`, author:d.name||"", creator:`${L.brand} (Jean-Pierre LAI-CHEONG)`, lang:L.htmlLang});
+}
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+function savePDF(d, msgEl){
+  const R=L.rp, bytes=reportPDF(d);
+  const name=`${R.file}-${(d.name||"ai-act").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.pdf`;
+  const blob=new Blob([bytes],{type:"application/pdf"});
+  const download=()=>{ const url=URL.createObjectURL(blob), aEl=document.createElement("a"); aEl.href=url; aEl.download=name; aEl.rel="noopener";
+    document.body.appendChild(aEl); aEl.click(); setTimeout(()=>{ URL.revokeObjectURL(url); aEl.remove(); },60000); if(msgEl) msgEl.textContent=R.pdfDone; };
+  if(isIOS() && navigator.canShare){
+    try{ const file=new File([blob],name,{type:"application/pdf"});
+      if(navigator.canShare({files:[file]})){ navigator.share({files:[file], title:R.tTitle}).then(()=>{ if(msgEl) msgEl.textContent=""; }).catch(e=>{ if(e&&e.name!=="AbortError") download(); }); return; } }catch(e){}
+  }
+  download();
 }
 
 /* ===================== LANGUE ===================== */
@@ -2149,7 +2346,7 @@ const I18N = {
   rp:{eyebrow:"Relevé de compétences", h1:"Mon relevé et mon attestation", file:"releve-ai-act",
     lede:"Ce document récapitule vos modules, votre résultat à l’examen final et l’état de chaque compétence. L’attestation de réussite s’ajoute en première page dès que l’examen est réussi.",
     name:"Nom et prénom à faire figurer", namePh:"Votre nom", nameHint:"Enregistré uniquement dans ce navigateur. Il n’est ni vérifié ni transmis.",
-    print:"Imprimer ou enregistrer en PDF", dl:"Télécharger (.html)", md:"Copier en Markdown", copied:"Copié.",
+    pdf:"Télécharger en PDF", print:"Imprimer", pdfDone:"PDF généré : vérifiez vos téléchargements.", pdfErr:"La génération du PDF a échoué. Utilisez « Imprimer » ou « Copier en Markdown ».", pdfHint:"Le PDF contient l’attestation (si l’examen est réussi) et le relevé complet. Sur iPhone, la feuille de partage s’ouvre : choisissez « Enregistrer dans Fichiers » ou « Imprimer ».", md:"Copier en Markdown", copied:"Copié.",
     iframe:"L’impression et le téléchargement sont disponibles quand le fichier est ouvert directement dans le navigateur.",
     noExam:"Attestation non disponible : validez tous les modules, puis réussissez l’examen final. Le relevé ci-dessous montre votre progression actuelle.",
     noExamReady:"Attestation non disponible : tous vos modules sont validés, il reste à réussir l’examen final (80 %).",
@@ -2256,7 +2453,7 @@ const I18N = {
   rp:{eyebrow:"Competency transcript", h1:"My transcript and statement of achievement", file:"ai-act-transcript",
     lede:"This document sums up your modules, your final exam result and the status of each competency. The statement of achievement is added as the first page once you pass the exam.",
     name:"Full name to display", namePh:"Your name", nameHint:"Stored in this browser only. It is neither verified nor sent anywhere.",
-    print:"Print or save as PDF", dl:"Download (.html)", md:"Copy as Markdown", copied:"Copied.",
+    pdf:"Download as PDF", print:"Print", pdfDone:"PDF generated: check your downloads.", pdfErr:"PDF generation failed. Use “Print” or “Copy as Markdown”.", pdfHint:"The PDF contains the statement of achievement (if the exam is passed) and the full transcript. On iPhone, the share sheet opens: choose “Save to Files” or “Print”.", md:"Copy as Markdown", copied:"Copied.",
     iframe:"Printing and downloading are available when the file is opened directly in the browser.",
     noExam:"Statement not available: pass every module, then pass the final exam. The transcript below shows your current progress.",
     noExamReady:"Statement not available: all your modules are passed; you still need to pass the final exam (80%).",
@@ -2595,7 +2792,7 @@ function renderDeliv(){
     try{ navigator.clipboard.writeText(md()).then(()=>msg.textContent=V.copied,()=>showMd()); }catch(e){ showMd(); }
   };
   function showMd(){ msg.innerHTML=`<textarea readonly id="dv-mdbox" style="min-height:200px;margin-top:8px">${esc(md())}</textarea>`; const b=document.getElementById("dv-mdbox"); b.focus(); b.select(); }
-  const dl=document.getElementById("dv-dl"); if(dl) dl.onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"})); a.download=`${t.id}-${t.title.toLowerCase().normalize("NFD").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.md`; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); };
+  const dl=document.getElementById("dv-dl"); if(dl) dl.onclick=()=>{ const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"})); a.download=`${t.id}-${t.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^\w]+/g,"-").replace(/^-|-$/g,"")}.md`; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); };
   const imp=document.getElementById("dv-imp"); if(imp) imp.onclick=()=>{
     const r=qualify(T);
     const fill=(k,v)=>{ if(!(d[k]||"").trim()) d[k]=v; };
