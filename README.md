@@ -4,7 +4,7 @@ Application d'auto-formation à l'AI Act européen (règlement (UE) 2024/1689, m
 
 ## Lancer
 
-Ouvrez `parcours-ai-act.html` dans un navigateur récent. Aucun serveur ni installation n'est nécessaire. Une connexion internet sert uniquement à charger les polices (Google Fonts) ; sans connexion, l'application fonctionne avec les polices système.
+Ouvrez `index.html` dans un navigateur récent. Aucun serveur ni installation n'est nécessaire. Une connexion internet sert uniquement à charger les polices (Google Fonts) ; sans connexion, l'application fonctionne avec les polices système.
 
 Pour la diffuser à une équipe : déposez le fichier sur un intranet, un SharePoint ou tout hébergement statique (GitHub Pages, Azure Static Web Apps…).
 
